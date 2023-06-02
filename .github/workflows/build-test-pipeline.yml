@@ -31,7 +31,7 @@ jobs:
         dotnet-version: '7.0.x'
 
     - name: Build
-      run: dotnet build dotnet build src/Explore.Cli/Explore.Cli.csproj --configuration $BUILD_CONFIG --no-restore
+      run: dotnet build src/Explore.Cli/Explore.Cli.csproj --configuration $BUILD_CONFIG --no-restore
 
     - name: Run tests
       run: dotnet test test/Explore.Cli.Tests/Explore.Cli.Tests.csproj /p:Configuration=$env:BUILD_CONFIG --no-restore --no-build --verbosity normal
