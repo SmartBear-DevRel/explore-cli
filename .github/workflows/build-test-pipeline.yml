@@ -23,10 +23,13 @@ jobs:
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: '7.0.x'
+    
+    - name: restore dependencies
+      run: dotnet restore
+      working-directory: src/Explore.Cli
 
     - name: Build
       run: |
-        dotnet restore
         dotnet build src/Explore.Cli/Explore.Cli.csproj --configuration $BUILD_CONFIG
 
     - name: Run tests
