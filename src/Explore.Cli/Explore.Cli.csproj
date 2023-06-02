@@ -8,6 +8,17 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>explore.cli</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
+    <Authors>Frank Kilcommins</Authors>
+    <Company>DevRel @ SmartBear</Company>
+    <PackageId>Explore.Cli</PackageId>
+    <PackageTags>Swagger;SwaggerHub;APIs;API-Exploration</PackageTags>
+    <Description>
+      Simple utility CLI for importing data into SwaggerHub Explore. For guides and tutorials see - https://github.com/SmartBear-DevRel/explore-cli
+      
+      For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
+      For SwaggerHub Explore docs, see - https://support.smartbear.com/swaggerhub-explore/docs
+      Try SwaggerHub Explore - https://try.smartbear.com/swaggerhub-explore
+    </Description>
   </PropertyGroup>
 
   <ItemGroup>
