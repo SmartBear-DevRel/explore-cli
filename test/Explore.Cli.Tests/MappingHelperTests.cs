@@ -71,6 +71,7 @@ public class MappingHelperTests
     [Theory]
     [InlineData("XSRF-TOKEN=be05885a-41fc-4820-83fb-5db17015ed4a", "be05885a-41fc-4820-83fb-5db17015ed4a")]
     [InlineData("xsrf-token=dd3424c9-17ec-4b20-a89c-ca89d98bbd3b", "dd3424c9-17ec-4b20-a89c-ca89d98bbd3b")]
+    [InlineData("Xsrf-Token=dd3424c9-17ec-4b20-a89c-ca89d98bbd3b", "dd3424c9-17ec-4b20-a89c-ca89d98bbd3b")]
     [InlineData("bf936dc3-6c70-43a0-a4c5-ddb42569a9c8", null)]
     public void ExtractXSRFTokenFromCookie_Tests(string cookie, string expected)
     {
