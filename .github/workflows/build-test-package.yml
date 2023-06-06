@@ -1,0 +1,76 @@
+name: build-test-package
+
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'src/**'
+    - 'test/**'
+  pull_request:
+    branches:
+    - main
+    paths:
+      - 'src/**'
+      - 'test/**'      
+    
+jobs:
+  build-test-package:
+
+    env:
+      BUILD_CONFIG: 'Release'
+
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      # install GitVersion
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.10.2
+        with:
+          versionSpec: '5.x'          
+          
+      # check out code
+      - name: 'Checkout code'
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version
+        id: gitVersion
+        uses: gittools/actions/gitversion/execute@v0.10.2
+        with:
+          useConfigFile: true
+          configFilePath: ./.github/gitversion.yml
+
+      # install dotnet
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '7.0.x'
+
+      - name: restore dependencies
+        run: dotnet restore
+        working-directory: src/Explore.Cli
+
+      - name: Build CLI
+        run: dotnet build --configuration $BUILD_CONFIG /p:Version=${{ steps.gitversion.outputs.AssemblySemVer }} /p:AssemblyVersion=${{ steps.gitversion.outputs.AssemblySemVer }} /p:InformationalVersion=${{ steps.gitversion.outputs.InformationalVersion }}
+        working-directory: src/Explore.Cli
+
+      - name: Run tests
+        run: | 
+          dotnet restore
+          dotnet test
+        working-directory: test/Explore.Cli.Tests
+
+      - name: Create Package
+        run: dotnet pack --configuration $BUILD_CONFIG -o:package /p:PackageVersion=${{ steps.gitVersion.outputs.assemblySemVer }}
+        working-directory: src/Explore.Cli
+
+      - name: Push package to GitHub registry
+        run: | 
+          dotnet nuget add source --username smartbear-devrel --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/smartbear-devrel/index.json"
+          dotnet nuget push ./package/*.nupkg  --source "github"  --api-key ${{ secrets.GITHUB_TOKEN }}
+        working-directory: src/Explore.Cli
