@@ -13,17 +13,22 @@
     <PackageId>Explore.Cli</PackageId>
     <PackageTags>Swagger;SwaggerHub;APIs;API-Exploration</PackageTags>
     <Description>
-      Simple utility CLI for importing data into SwaggerHub Explore. For guides and tutorials see - https://github.com/SmartBear-DevRel/explore-cli
+      Simple utility CLI for importing data into SwaggerHub Explore. 
       
       For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
       For SwaggerHub Explore docs, see - https://support.smartbear.com/swaggerhub-explore/docs
       Try SwaggerHub Explore - https://try.smartbear.com/swaggerhub-explore
     </Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/SmartBear-DevRel/explore-cli</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Spectre.Console" Version="0.47.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 </Project>
