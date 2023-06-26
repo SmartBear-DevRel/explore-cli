@@ -90,7 +90,8 @@ internal class Program
                     resultTable.AddColumn(new TableColumn("Details").Centered());
 
                     //prepare request body
-                    var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = collection.Name }), Encoding.UTF8, "application/json");   
+                    var cleanedCollectionName = UtilityHelper.CleanString(collection.Name);
+                    var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");   
 
                     exploreHttpClient.DefaultRequestHeaders.Clear();
                     exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
@@ -100,7 +101,7 @@ internal class Program
 
                     if(spacesResponse.StatusCode == HttpStatusCode.Created)
                     {
-                        var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{collection.Name}[/] CREATED"), Width = 75, UseSafeBorder = true};
+                        var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true};
                         apiImportResults.AddColumn("Result");
                         apiImportResults.AddColumn("API Imported");
                         apiImportResults.AddColumn("Connection Imported");
@@ -113,7 +114,8 @@ internal class Program
                             foreach(var entry in collection.CollectionEntries)
                             {
                                 //now let's create an API entry in the space
-                                var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = entry.Name, Type = "REST", Description = $"imported from inspector on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json"); 
+                                var cleanedAPIName = UtilityHelper.CleanString(entry.Name);
+                                var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from inspector on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json"); 
                             
                                 exploreHttpClient.DefaultRequestHeaders.Clear();
                                 exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
@@ -135,11 +137,11 @@ internal class Program
 
                                     if(connectionResponse.StatusCode == HttpStatusCode.Created)
                                     {
-                                        apiImportResults.AddRow("[green]OK[/]", $"API '{entry.Name}' created", "Connection created");
+                                        apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
                                     }
                                     else
                                     {
-                                        apiImportResults.AddRow("[orange3]OK[/]", $"API '{entry.Name}' created", "[orange3]Connection NOT created[/]");
+                                        apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
                                     }
                                 }
                                 else
@@ -166,7 +168,7 @@ internal class Program
                                 break;                          
                             
                             case(HttpStatusCode.Conflict):
-                                var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {collection.Name} [orange3]ALREADY EXISTS[/]")};
+                                var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]")};
                                 apiImportResults.AddColumn("Result");
                                 apiImportResults.AddColumn("API Imported");
                                 apiImportResults.AddColumn("Connection Imported");
