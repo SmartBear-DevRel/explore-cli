@@ -39,6 +39,12 @@ You will need the following:
 - A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required)
 - A Swagger Inspector account, register by clicking the `Sign Up` button at https://inspector.swagger.io/builder (if required)
 
+### Install the CLI
+
+Download and install the CLI tool from Nuget: https://www.nuget.org/packages/Explore.Cli
+
+`dotnet tool install --global Explore.Cli`
+
 ### Session Cookies for CLI command
 
 You will need to obtain certain cookies from active sessions in both Swagger Inspector and SwaggerHub Explore to invoke the `import-inspector-collections` CLI command.
