@@ -26,9 +26,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NJsonSchema" Version="10.9.0" />
     <PackageReference Include="Spectre.Console" Version="0.47.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="schemas\ExploreSpaces.schema.json" Pack="true" PackagePath="contentFiles\schemas">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToPublishDirectory>true</CopyToPublishDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>      
+    </None>      
   </ItemGroup>
 
 </Project>

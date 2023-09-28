@@ -16,4 +16,16 @@ public class UtilityHelperTests
         var actual = UtilityHelper.CleanString(input);
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    public async void SchemaValidation_ExploreSpaces_Invalid_Should_Fail()
+    {
+        string entryAsJsonString = @"{""info"": {""version"": ""0.0.1"", ""exportedAt"": ""10:17:50 AM"" }}";
+
+        string expectedError = "1 total errors";        
+        var validationResult = await UtilityHelper.ValidateSchema(entryAsJsonString, "ExploreSpaces.schema.json");
+
+        Assert.False(validationResult.isValid);
+        Assert.Contains(expectedError, validationResult.Message);
+    }
 }
