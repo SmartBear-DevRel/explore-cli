@@ -21,20 +21,19 @@ public static class UtilityHelper
         }
     }
 
-    public static bool IsContentTypeExpected(HttpResponseHeaders? headers, string expectedContentType)
+    public static bool IsContentTypeExpected(HttpContentHeaders? headers, string expectedContentType)
     {
         if(headers == null)
         {
             return false;
         }
-
         
         foreach(var header in headers)
         {
 
             if(string.Equals(header.Key, "Content-Type", StringComparison.OrdinalIgnoreCase))
             {
-                if(string.Equals(header.Value.ToString(), expectedContentType, StringComparison.OrdinalIgnoreCase))
+                if(string.Equals(header.Value.FirstOrDefault(), expectedContentType, StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine("expected value");
                     return true;

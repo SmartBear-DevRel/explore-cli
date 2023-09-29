@@ -1,3 +1,7 @@
+using System.Collections.ObjectModel;
+using System.Net;
+using System.Net.Http.Headers;
+
 namespace Explore.Cli.Tests;
 
 public class UtilityHelperTests
@@ -28,4 +32,30 @@ public class UtilityHelperTests
         Assert.False(validationResult.isValid);
         Assert.Contains(expectedError, validationResult.Message);
     }
+
+    [Fact]
+    public void IsContentTypeExpected_Should_Pass()
+    {
+        HttpResponseMessage message = new HttpResponseMessage();
+        message.Content.Headers.TryAddWithoutValidation("Content-Type", new MediaTypeHeaderValue("application/json").MediaType);
+        var count = message.Headers.Count();
+        
+
+        var actual = UtilityHelper.IsContentTypeExpected(message.Content.Headers, "application/json");
+
+        Assert.True(actual);
+    }
+
+    [Fact]
+    public void IsContentTypeExpected_Should_Fail()
+    {
+        HttpResponseMessage message = new HttpResponseMessage();
+        message.Content.Headers.TryAddWithoutValidation("Content-Type", new MediaTypeHeaderValue("application/json").MediaType);
+        var count = message.Headers.Count();
+        
+
+        var actual = UtilityHelper.IsContentTypeExpected(message.Content.Headers, "text/html");
+
+        Assert.False(actual);
+    }    
 }

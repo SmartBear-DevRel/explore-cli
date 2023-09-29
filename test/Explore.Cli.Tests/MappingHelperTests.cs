@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Explore.Cli.Models;
+using Spectre.Console;
 
 namespace Explore.Cli.Tests;
 
@@ -459,5 +460,15 @@ public class MappingHelperTests
 
         Assert.Equal(2, actual?.Embedded?.Connections?.Count());
         Assert.Equal("https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net", actual?.Embedded?.Connections?.FirstOrDefault(c => c.Id == "b11a0d72-bb2c-454f-8f19-3d501a7ac65f")?.ConnectionDefinition?.Servers?.FirstOrDefault()?.Url);
+    }
+
+    [Fact]
+    public static void MassageConnectionExportForImport_Should_Pass()
+    {
+        var sut = new Connection();
+
+        var act = MappingHelper.MassageConnectionExportForImport(sut);
+
+        Assert.Equal("ConnectionRequest", sut.Type);
     }
 }
