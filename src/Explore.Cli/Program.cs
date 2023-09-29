@@ -12,7 +12,7 @@ internal class Program
     {
         var rootCommand = new RootCommand();
         rootCommand.Name = "Explore.CLI";
-        rootCommand.Description = "Simple utility CLI for importing data into SwaggerHub Explore";
+        rootCommand.Description = "Simple utility CLI for importing data into and out of SwaggerHub Explore";
 
         var username = new Option<string>(name: "--username", description: "Username from Swagger Inspector.") { IsRequired = true };
         username.AddAlias("-u");

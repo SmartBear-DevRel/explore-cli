@@ -13,7 +13,7 @@
     <PackageId>Explore.Cli</PackageId>
     <PackageTags>Swagger;SwaggerHub;APIs;API-Exploration</PackageTags>
     <Description>
-      Simple utility CLI for importing data into SwaggerHub Explore. 
+      Simple utility CLI for importing data into and out of SwaggerHub Explore. 
       
       For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
       For SwaggerHub Explore docs, see - https://support.smartbear.com/swaggerhub-explore/docs
