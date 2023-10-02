@@ -1,6 +1,7 @@
 ﻿using System.CommandLine;
 using System.Net;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Explore.Cli.Models;
@@ -244,6 +245,13 @@ internal class Program
 
         if(spacesResponse.StatusCode == HttpStatusCode.OK)
         {
+            //ensure expected spaces response (not silent redirect to Auth provider)
+            if(!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
+            {
+                AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
+                return;
+            }
+
             var spaces = await spacesResponse.Content.ReadFromJsonAsync<PagedSpaces>();
             var panel = new Panel($"You have [green]{spaces!.Embedded!.Spaces!.Count} spaces[/] in explore");
             panel.Width = 100;
@@ -342,7 +350,7 @@ internal class Program
             
             // export the file
             string exploreSpacesJson = JsonSerializer.Serialize(export);
-            var filePath = $@"{Environment.CurrentDirectory}\ExploreSpaces.json";
+            var filePath = Path.Combine(Environment.CurrentDirectory, "ExploreSpaces.json");
 
             using (StreamWriter streamWriter = new StreamWriter(filePath))
             {
@@ -359,7 +367,14 @@ internal class Program
         try
         {
             using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
+            {   
+                //let's verify it's a JSON file now
+                if(!UtilityHelper.IsJsonFile(filePath))
+                {
+                    AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
+                    return;
+                }
+
                 // You can read from the file if this point is reached
                 AnsiConsole.MarkupLine($"processing ...");
             }
@@ -408,14 +423,14 @@ internal class Program
             {
                 foreach(var exportedSpace in exportedSpaces.ExploreSpaces)
                 {
-                    var spaceExists = await CheckSpaceExists(exploreCookie, exportedSpace.Id?.ToString());
+                    var spaceExists = await CheckSpaceExists(exploreCookie, exportedSpace.Id?.ToString(), verboseOutput);
 
                     var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{exportedSpace.Name}[/]"), Width = 100, UseSafeBorder = true};
                     resultTable.AddColumn("Result");
                     resultTable.AddColumn(new TableColumn("Details").Centered());  
                      
 
-                    var importedSpace =  await UpsertSpace(exploreCookie, exportedSpace.Name, exportedSpace.Id.ToString());
+                    var importedSpace =  await UpsertSpace(exploreCookie, spaceExists, exportedSpace.Name, exportedSpace.Id.ToString());
 
                     if(!string.IsNullOrEmpty(importedSpace.Name))
                     {
@@ -432,7 +447,7 @@ internal class Program
                                 if(string.Equals(exportedAPI.Type, "REST", StringComparison.OrdinalIgnoreCase))
                                 {
                                     //remark - Improve DTO mapping here
-                                    var importedApi = await UpsertApi(exploreCookie, spaceExists, importedSpace.Id.ToString(), exportedAPI.Id.ToString(), exportedAPI.Name, exportedAPI.Type);
+                                    var importedApi = await UpsertApi(exploreCookie, spaceExists, importedSpace.Id.ToString(), exportedAPI.Id.ToString(), exportedAPI.Name, exportedAPI.Type, verboseOutput);
 
                                     if(!string.IsNullOrEmpty(importedApi.Name))
                                     {
@@ -442,7 +457,7 @@ internal class Program
                                         {
                                             foreach(var exportedConnection in exportedAPI.connections) //add type filter for now
                                             {
-                                                var importedConnection = await UpsertConnection(exploreCookie, spaceExists, importedSpace.Id.ToString(), importedApi.Id.ToString(), exportedConnection?.Id?.ToString(), exportedConnection);
+                                                var importedConnection = await UpsertConnection(exploreCookie, spaceExists, importedSpace.Id.ToString(), importedApi.Id.ToString(), exportedConnection?.Id?.ToString(), exportedConnection, verboseOutput);
 
                                                 if(importedConnection)
                                                 {
@@ -488,7 +503,7 @@ internal class Program
     }
 
 
-    private static async Task<bool> CheckSpaceExists(string exploreCookie, string? id)
+    private static async Task<bool> CheckSpaceExists(string exploreCookie, string? id, bool? verboseOutput)
     {
 
         if(string.IsNullOrEmpty(id))
@@ -508,15 +523,25 @@ internal class Program
 
         if(spacesResponse.StatusCode == HttpStatusCode.OK)
         {
+            if(!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
+            {
+                AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
+                throw new HttpRequestException("Please review your credentials, Unexpected response GET spaces endpoint");
+            }
+
             return true;
         }
-        
-        AnsiConsole.MarkupLine($"[red]StatusCode {spacesResponse.StatusCode} returned from the GetSpaceById API[/]");
 
+        
+        if(verboseOutput != null && verboseOutput == true)
+        {
+            AnsiConsole.MarkupLine($"[orange3]StatusCode {spacesResponse.StatusCode} returned from the GetSpaceById API. New space will be created[/]");
+        }
+        
         return false;
     } 
 
-    private static async Task<bool> CheckApiExists(string exploreCookie, string spaceId, string? id)
+    private static async Task<bool> CheckApiExists(string exploreCookie, string spaceId, string? id, bool? verboseOutput)
     {
 
         if(string.IsNullOrEmpty(id))
@@ -539,12 +564,15 @@ internal class Program
             return true;
         }
         
-        AnsiConsole.MarkupLine($"[red]StatusCode {spacesResponse.StatusCode} returned from the GetApiById API[/]");
+        if(verboseOutput != null && verboseOutput == true)
+        {
+            AnsiConsole.MarkupLine($"[orange3]StatusCode {spacesResponse.StatusCode} returned from the GetApiById API. New API will be created in the space.[/]");
+        }      
 
         return false;
     } 
 
-   private static async Task<bool> CheckConnectionExists(string exploreCookie, string spaceId, string apiId, string? id)
+   private static async Task<bool> CheckConnectionExists(string exploreCookie, string spaceId, string apiId, string? id, bool? verboseOutput)
     {
 
         if(string.IsNullOrEmpty(id))
@@ -566,14 +594,17 @@ internal class Program
         {
             return true;
         }
-        
-        AnsiConsole.MarkupLine($"[red]StatusCode {response.StatusCode} returned from the GetConnectionById API[/]");
+
+        if(verboseOutput != null && verboseOutput == true)
+        {
+            AnsiConsole.MarkupLine($"[orange3]StatusCode {response.StatusCode} returned from the GetConnectionById API. New connection within API will be created.[/]");
+        }    
 
         return false;
     }     
 
 
-    private static async Task<SpaceResponse> UpsertSpace(string exploreCookie, string? name, string? id)
+    private static async Task<SpaceResponse> UpsertSpace(string exploreCookie, bool spaceExists, string? name, string? id)
 {
         var httpClient = new HttpClient
         {
@@ -592,7 +623,7 @@ internal class Program
         
         HttpResponseMessage? spacesResponse;
 
-        if (string.IsNullOrEmpty(id))
+        if (string.IsNullOrEmpty(id) || !spaceExists)
         {
             spacesResponse = await httpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);
         }
@@ -613,7 +644,7 @@ internal class Program
             return await spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>() ?? new SpaceResponse();
         }
 
-        if(!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
+        if(!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/json"))
         {
             AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from POST/PUT spaces API for name: {name}, id:{id}[/]");
         }
@@ -627,7 +658,7 @@ internal class Program
 
 
 
-    private static async Task<ApiResponse> UpsertApi(string exploreCookie, bool spaceExists, string spaceId, string? id, string? name, string? type)
+    private static async Task<ApiResponse> UpsertApi(string exploreCookie, bool spaceExists, string spaceId, string? id, string? name, string? type, bool? verboseOutput)
     {
         var httpClient = new HttpClient
         {
@@ -647,7 +678,7 @@ internal class Program
         
         HttpResponseMessage? apiResponse;
 
-        if (spaceExists && await CheckApiExists(exploreCookie, spaceId, id))
+        if (spaceExists && await CheckApiExists(exploreCookie, spaceId, id, verboseOutput))
         {
             // update the api
             apiResponse = await httpClient.PutAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{id}", apiContent);
@@ -669,7 +700,7 @@ internal class Program
             return await apiResponse.Content.ReadFromJsonAsync<ApiResponse>() ?? new ApiResponse();
         }
 
-        if(!UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/hal+json"))
+        if(!UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/json"))
         {
             AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from POST/PUT spaces API for name: {name}, id:{id}[/]");
         }
@@ -681,7 +712,7 @@ internal class Program
         return new ApiResponse();
     }
 
-    private static async Task<bool> UpsertConnection(string exploreCookie, bool spaceExists, string spaceId, string apiId, string? connectionId, Connection? connection)
+    private static async Task<bool> UpsertConnection(string exploreCookie, bool spaceExists, string spaceId, string apiId, string? connectionId, Connection? connection, bool? verboseOutput)
     {
         var httpClient = new HttpClient
         {
@@ -696,7 +727,7 @@ internal class Program
         
         HttpResponseMessage? connectionResponse;
 
-        if (spaceExists && await CheckConnectionExists(exploreCookie, spaceId, apiId, connectionId))
+        if (spaceExists && await CheckConnectionExists(exploreCookie, spaceId, apiId, connectionId, verboseOutput))
         {
             connectionResponse = await httpClient.PutAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{apiId}/connections/{connectionId}", connectionContent);
         }
@@ -711,7 +742,7 @@ internal class Program
         }  
         else 
         {
-            if(!UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/hal+json"))
+            if(!UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/json"))
             {
                 AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from the connections API for api: {apiId} and {connection?.Name}[/]");
             }
@@ -727,8 +758,6 @@ internal class Program
 
         return false;
     }
-
-
 }
 
 

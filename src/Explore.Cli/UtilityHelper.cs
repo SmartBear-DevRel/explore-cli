@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.StaticFiles;
 using NJsonSchema;
 
 public static class UtilityHelper
@@ -35,7 +37,6 @@ public static class UtilityHelper
             {
                 if(string.Equals(header.Value.FirstOrDefault(), expectedContentType, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("expected value");
                     return true;
                 }
             }
@@ -43,7 +44,26 @@ public static class UtilityHelper
 
         //no content type
         return false;
+    }
 
+    public static bool IsJsonFile(string filePath)
+    {
+        string extension = Path.GetExtension(filePath);
+
+        if (string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase))
+        {
+            // Check the MIME type to further validate
+            var provider = new FileExtensionContentTypeProvider();
+
+            if (!provider.TryGetContentType(filePath, out string contentType))
+            {
+                return false;
+            }            
+            
+            return string.Equals(contentType, MediaTypeNames.Application.Json, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 
     public static async Task<SchemaValidationResult> ValidateSchema(string jsonAsString, string schemaName)
