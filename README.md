@@ -29,19 +29,11 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 >  `import-spaces`                 Import SwaggerHub Explore spaces from a file
 
 
-## Importing Swagger Inspector Collections to SwaggerHub Explore
-
-The `Explore.cli` can import any collection you might have in Swagger Inspector as spaces within SwaggerHub Explore via the 'import-inspector-collections` command.
-
-A sample call to the command is as follows:
-```
-explore.cli export-spaces -ec "SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"
-```
-
 ### Prerequisites
 You will need the following:
-- A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required)
-- If you want to import data from the legacy Swagger Inspector tool, the you'll also need a Swagger Inspector account, register by clicking the `Sign Up` button at https://inspector.swagger.io/builder (if required)
+- .NET 7.0 (or above). Follow instructions for [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net70), [Linux](https://learn.microsoft.com/en-us/dotnet/core/install/linux), or [MacOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
+- A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required).
+- If you want to import data from the legacy Swagger Inspector tool, the you'll also need a Swagger Inspector account, register by clicking the `Sign Up` button at https://inspector.swagger.io/builder (if required).
 
 ### Install the CLI
 
