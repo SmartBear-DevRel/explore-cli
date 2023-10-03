@@ -1,4 +1,5 @@
 namespace Explore.Cli.Models;
+
 using System.Text.Json.Serialization;
 
 
@@ -14,6 +15,9 @@ public partial class Transaction
 
 public partial class Connection
 {
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
     [JsonPropertyName("type")]
     public string? Type { get; set; }
 
@@ -28,6 +32,9 @@ public partial class Connection
 
     [JsonPropertyName("connectionDefinition")]
     public ConnectionDefinition? ConnectionDefinition { get; set; }
+
+    [JsonPropertyName("paths")]
+    public Dictionary<string, object>? Paths {get; set;}
 
     [JsonPropertyName("settings")]
     public Settings? Settings { get; set; }
@@ -138,8 +145,8 @@ public partial class Credentials
 
 public partial class ConnectionDefinition
 {
-    //[JsonPropertyName("openapi")]
-    //public string Openapi { get; set; }
+    [JsonPropertyName("openapi")]
+    public string? OpenApi { get; set; }
 
     [JsonPropertyName("servers")]
     public List<Server>? Servers { get; set; }
@@ -193,6 +200,7 @@ public class Example
 
 public partial class Server
 {
+    //[RegularExpression(@"^(http(s):\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$")]
     [JsonPropertyName("url")]
     public string? Url { get; set; }
 }
@@ -242,20 +250,26 @@ public class SpaceRequest
 
     public partial class Apis
     {
+        //[RegularExpression(@"^(http(s):\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$")]
         [JsonPropertyName("href")]
         public Uri? Href { get; set; }
     }
 
 public class ApiRequest
 {
+    [JsonRequired]
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
+    [JsonRequired]
     [JsonPropertyName("type")]
     public string? Type { get; set; }
 
     [JsonPropertyName("description")]
-    public string? Description { get; set; }       
+    public string? Description { get; set; }      
+
+    [JsonPropertyName("servers")]
+    public List<Server>? Servers { get; set; } 
 }
 
     public partial class ApiResponse
@@ -263,11 +277,53 @@ public class ApiRequest
         [JsonPropertyName("id")]
         public Guid Id { get; set; }
 
+        [JsonRequired]
         [JsonPropertyName("name")]
         public string? Name { get; set; }
 
+        [JsonRequired]
         [JsonPropertyName("type")]
         public string? Type { get; set; }
 
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }      
+
+        [JsonPropertyName("servers")]
+        public List<Server>? Servers { get; set; } 
     }
 
+public partial class PagedSpaces
+{
+    [JsonPropertyName("_embedded")]
+    public  EmbeddedSpaces? Embedded { get; set; }
+}
+
+public partial class EmbeddedSpaces 
+{
+    [JsonPropertyName("spaces")]
+    public  List<SpaceResponse>? Spaces { get; set; }
+}
+
+public partial class PagedApis
+{
+    [JsonPropertyName("_embedded")]
+    public  EmbeddedApis? Embedded { get; set; }
+}
+
+public partial class EmbeddedApis
+{
+    [JsonPropertyName("apis")]
+    public  List<ApiResponse>? Apis { get; set; }
+}
+
+public partial class PagedConnections
+{
+    [JsonPropertyName("_embedded")]
+    public  EmbeddedConnections? Embedded { get; set; }
+}
+
+public partial class EmbeddedConnections
+{
+    [JsonPropertyName("connections")]
+    public  List<Connection>? Connections { get; set; }
+}

@@ -13,7 +13,7 @@
     <PackageId>Explore.Cli</PackageId>
     <PackageTags>Swagger;SwaggerHub;APIs;API-Exploration</PackageTags>
     <Description>
-      Simple utility CLI for importing data into SwaggerHub Explore. 
+      Simple utility CLI for importing data into and out of SwaggerHub Explore. 
       
       For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
       For SwaggerHub Explore docs, see - https://support.smartbear.com/swaggerhub-explore/docs
@@ -26,9 +26,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
+    <PackageReference Include="NJsonSchema" Version="10.9.0" />
     <PackageReference Include="Spectre.Console" Version="0.47.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="schemas\ExploreSpaces.schema.json" Pack="true" PackagePath="contentFiles\schemas">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToPublishDirectory>true</CopyToPublishDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>      
+    </None>      
   </ItemGroup>
 
 </Project>

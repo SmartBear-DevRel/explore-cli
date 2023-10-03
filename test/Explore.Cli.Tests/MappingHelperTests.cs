@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Explore.Cli.Models;
+using Spectre.Console;
 
 namespace Explore.Cli.Tests;
 
@@ -241,4 +242,233 @@ public class MappingHelperTests
         Assert.Equal(expected.Type, actual?.Type);
         Assert.Equal(expected.Token, actual?.Token);
     }    
+
+    [Fact]
+    public void MapConnectionServersToServerList()
+    {
+        var entryAsJsonString = @"{
+                ""id"": ""b11a0d72-bb2c-454f-8f19-3d501a7ac65f"",
+                ""name"": ""REST"",
+                ""schema"": ""OpenAPI"",
+                ""schemaVersion"": ""3.0.1"",
+                ""connectionDefinition"": {
+                ""info"": {
+                    ""title"": ""app1"",
+                    ""version"": ""version2""
+                },
+                ""tags"": [],
+                ""paths"": {
+                    ""/api/payees"": {
+                    ""get"": {
+                        ""responses"": [],
+                        ""parameters"": [
+                        {
+                            ""in"": ""query"",
+                            ""name"": ""country_of_registration"",
+                            ""examples"": {
+                            ""example"": {
+                                ""value"": ""IE""
+                            }
+                            }
+                        },
+                        {
+                            ""in"": ""query"",
+                            ""name"": ""name"",
+                            ""examples"": {
+                            ""example"": {
+                                ""value"": ""ltd""
+                            }
+                            }
+                        }
+                        ]
+                    }
+                    }
+                },
+                ""openapi"": ""3.0.0"",
+                ""servers"": [
+                    {
+                    ""url"": ""https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net""
+                    }
+                ]
+                },
+                ""settings"": {
+                ""type"": ""RestConnectionSettings"",
+                ""encodeUrl"": true,
+                ""connectTimeout"": 30,
+                ""followRedirects"": true
+                },
+                ""credentials"": null,
+                ""_links"": {
+                ""self"": {
+                    ""href"": ""https://api.explore.swaggerhub.com/spaces-api/v1/spaces/dd4ad781-a47a-4dd5-84c1-5c799aa8e1b8/apis/89907a82-5047-499f-8236-ea796935248d/connections/b11a0d72-bb2c-454f-8f19-3d501a7ac65f""
+                }
+                }
+            }";
+
+        var expected = new Connection() {Id = "b11a0d72-bb2c-454f-8f19-3d501a7ac65f", 
+                ConnectionDefinition = new ConnectionDefinition() {
+                    Servers = new List<Server>() {
+                        new Server() { Url = "https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net" }
+                    } }
+            };
+
+        var actual = JsonSerializer.Deserialize<Connection>(entryAsJsonString);
+
+        Assert.Equal(expected.Id, actual?.Id);
+        Assert.Equal(expected.ConnectionDefinition.Servers.FirstOrDefault()?.Url, actual?.ConnectionDefinition?.Servers?.FirstOrDefault()?.Url);
+    }
+
+    [Fact]
+    public void MapPagedConnectionsJsonToObjects()
+    {
+        var entryAsJsonString = @"{
+            ""_embedded"": {
+                ""connections"": [
+                {
+                    ""id"": ""b11a0d72-bb2c-454f-8f19-3d501a7ac65f"",
+                    ""name"": ""REST"",
+                    ""schema"": ""OpenAPI"",
+                    ""schemaVersion"": ""3.0.1"",
+                    ""connectionDefinition"": {
+                    ""info"": {
+                        ""title"": ""app1"",
+                        ""version"": ""version2""
+                    },
+                    ""tags"": [],
+                    ""paths"": {
+                        ""/api/payees"": {
+                        ""get"": {
+                            ""responses"": [],
+                            ""parameters"": [
+                            {
+                                ""in"": ""query"",
+                                ""name"": ""country_of_registration"",
+                                ""examples"": {
+                                ""example"": {
+                                    ""value"": ""IE""
+                                }
+                                }
+                            },
+                            {
+                                ""in"": ""query"",
+                                ""name"": ""name"",
+                                ""examples"": {
+                                ""example"": {
+                                    ""value"": ""ltd""
+                                }
+                                }
+                            }
+                            ]
+                        }
+                        }
+                    },
+                    ""openapi"": ""3.0.0"",
+                    ""servers"": [
+                        {
+                        ""url"": ""https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net""
+                        }
+                    ]
+                    },
+                    ""settings"": {
+                    ""type"": ""RestConnectionSettings"",
+                    ""encodeUrl"": true,
+                    ""connectTimeout"": 30,
+                    ""followRedirects"": true
+                    },
+                    ""credentials"": null,
+                    ""_links"": {
+                    ""self"": {
+                        ""href"": ""https://api.explore.swaggerhub.com/spaces-api/v1/spaces/dd4ad781-a47a-4dd5-84c1-5c799aa8e1b8/apis/89907a82-5047-499f-8236-ea796935248d/connections/b11a0d72-bb2c-454f-8f19-3d501a7ac65f""
+                    }
+                    }
+                },
+                {
+                    ""id"": ""8184596a-bbee-4c2e-a050-a7ef74d4e3bc"",
+                    ""name"": ""REST"",
+                    ""schema"": ""OpenAPI"",
+                    ""schemaVersion"": ""3.0.1"",
+                    ""connectionDefinition"": {
+                    ""info"": {
+                        ""title"": ""app1"",
+                        ""version"": ""version2""
+                    },
+                    ""tags"": [],
+                    ""paths"": {
+                        ""/api/payees"": {
+                        ""get"": {
+                            ""responses"": [],
+                            ""parameters"": [
+                            {
+                                ""in"": ""query"",
+                                ""name"": ""country_of_registration"",
+                                ""examples"": {
+                                ""example"": {
+                                    ""value"": ""IT""
+                                }
+                                }
+                            },
+                            {
+                                ""in"": ""query"",
+                                ""name"": ""jurisdiction_identifier_type"",
+                                ""examples"": {
+                                ""example"": {
+                                    ""value"": ""fiscal-code""
+                                }
+                                }
+                            }
+                            ]
+                        }
+                        }
+                    },
+                    ""openapi"": ""3.0.0"",
+                    ""servers"": [
+                        {
+                        ""url"": ""https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net""
+                        }
+                    ]
+                    },
+                    ""settings"": {
+                    ""type"": ""RestConnectionSettings"",
+                    ""encodeUrl"": true,
+                    ""connectTimeout"": 30,
+                    ""followRedirects"": true
+                    },
+                    ""credentials"": null,
+                    ""_links"": {
+                    ""self"": {
+                        ""href"": ""https://api.explore.swaggerhub.com/spaces-api/v1/spaces/dd4ad781-a47a-4dd5-84c1-5c799aa8e1b8/apis/89907a82-5047-499f-8236-ea796935248d/connections/8184596a-bbee-4c2e-a050-a7ef74d4e3bc""
+                    }
+                    }
+                }
+                ]
+            },
+            ""_links"": {
+                ""self"": {
+                ""href"": ""https://api.explore.swaggerhub.com/spaces-api/v1/spaces/dd4ad781-a47a-4dd5-84c1-5c799aa8e1b8/apis/89907a82-5047-499f-8236-ea796935248d/connections?page=0&size=2000""
+                }
+            },
+            ""page"": {
+                ""size"": 2000,
+                ""totalElements"": 2,
+                ""totalPages"": 1,
+                ""number"": 0
+            }
+            }";
+
+
+        var actual = JsonSerializer.Deserialize<PagedConnections>(entryAsJsonString);            
+
+        Assert.Equal(2, actual?.Embedded?.Connections?.Count());
+        Assert.Equal("https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net", actual?.Embedded?.Connections?.FirstOrDefault(c => c.Id == "b11a0d72-bb2c-454f-8f19-3d501a7ac65f")?.ConnectionDefinition?.Servers?.FirstOrDefault()?.Url);
+    }
+
+    [Fact]
+    public static void MassageConnectionExportForImport_Should_Pass()
+    {
+        var sut = new Connection();
+
+        var act = MappingHelper.MassageConnectionExportForImport(sut);
+
+        Assert.Equal("ConnectionRequest", sut.Type);
+    }
 }

@@ -11,7 +11,7 @@ Simple utility CLI for importing data into SwaggerHub Explore.
                 |_|
 ```
 **Description:**
->   Simple utility CLI for importing data into SwaggerHub Explore
+>   Simple utility CLI for importing data into and out of SwaggerHub Explore
 
 **Usage:**
 > Explore.CLI [command] [options]
@@ -23,21 +23,17 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 
 **Commands:**
 >  `import-inspector-collections`  Import Swagger Inspector collections into SwaggerHub Explore
+>
+>  `export-spaces`                 Export SwaggerHub Explore spaces to filesystem
+>
+>  `import-spaces`                 Import SwaggerHub Explore spaces from a file
 
-
-## Importing Swagger Inspector Collections to SwaggerHub Explore
-
-The `Explore.cli` can import any collection you might have in Swagger Inspector as spaces within SwaggerHub Explore via the 'import-inspector-collections` command.
-
-A sample call to the command is as follows:
-```
-explore.cli import-inspector-collections -u JoeBloggs -ic "inspector-token=34c5921e-fdf8-4531-8d7a-ed2940076444" -ec "SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"
-```
 
 ### Prerequisites
 You will need the following:
-- A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required)
-- A Swagger Inspector account, register by clicking the `Sign Up` button at https://inspector.swagger.io/builder (if required)
+- .NET 7.0 (or above). Follow instructions for [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net70), [Linux](https://learn.microsoft.com/en-us/dotnet/core/install/linux), or [MacOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
+- A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required).
+- If you want to import data from the legacy Swagger Inspector tool, the you'll also need a Swagger Inspector account, register by clicking the `Sign Up` button at https://inspector.swagger.io/builder (if required).
 
 ### Install the CLI
 
@@ -47,11 +43,11 @@ Download and install the CLI tool from Nuget: https://www.nuget.org/packages/Exp
 
 ### Session Cookies for CLI command
 
-You will need to obtain certain cookies from active sessions in both Swagger Inspector and SwaggerHub Explore to invoke the `import-inspector-collections` CLI command.
+You will meed to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands. For the `import-inspector-collections` CLI command, you will also need to obtain a cookie from an active Swagger Inspector session.
 
 From Swagger Inspector, navigate to your browser development tools, locate the application cookies and extract the `inspector-token` cookie.
 
-From SwaggerHub Explore, navigate to your browser development tools, locate the application cookies and extract the `session` and `XSRF-TOKEN` cookies.
+From SwaggerHub Explore, navigate to your browser development tools, locate the application cookies and extract the `SESSION` and `XSRF-TOKEN` cookies.
 
 #### How to get cookie values from your browser
 
@@ -99,8 +95,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
   > `-u`, `--username` <username> (REQUIRED)                   Username from Swagger Inspector.
   
-  > `-ic`, `--inspector-cookie` <inspector-cookie> (REQUIRED)  A valid and active Swagger Inspector session cookie associated with
-                                                         provided username
+  > `-ic`, `--inspector-cookie` <inspector-cookie> (REQUIRED)  A valid and active Swagger Inspector session cookie associated with provided username
   
   > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)      A valid and active SwaggerHub Explore session cookie
   
@@ -115,7 +110,61 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
+### Running the `export-spaces` command
 
+**Command Options**
+```
+  _____                  _                              ____   _   _
+ | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
+ |  _|   \ \/ / | '_ \  | |  / _ \  | '__|  / _ \     | |     | | | |
+ | |___   >  <  | |_) | | | | (_) | | |    |  __/  _  | |___  | | | |
+ |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
+                |_|
+```
+**Description:**
+  > Export SwaggerHub Explore spaces to filesystem
+
+**Usage:**
+  > Explore.CLI export-spaces [options]
+
+**Options:**
+  > -ec, --explore-cookie <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+  > -v, --verbose                                      Include verbose output during processing
+  > -?, -h, --help                                     Show help and usage information
+
+**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+
+>Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
+
+> Please note - the current `export-spaces` does not support exporting KAFKA APIs
+### Running the `import-spaces` command
+
+**Command Options**
+```
+  _____                  _                              ____   _   _
+ | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
+ |  _|   \ \/ / | '_ \  | |  / _ \  | '__|  / _ \     | |     | | | |
+ | |___   >  <  | |_) | | | | (_) | | |    |  __/  _  | |___  | | | |
+ |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
+                |_|
+```
+**Description:**
+  > Import SwaggerHub Explore spaces from a file
+
+**Usage:**
+  > Explore.CLI import-spaces [options]
+
+**Options:**
+  > -ec, --explore-cookie <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+  > -fp, --file-path <file-path> (REQUIRED)            The path to the file used for importing data
+  > -v, --verbose                                      Include verbose output during processing
+  > -?, -h, --help                                     Show help and usage information
+
+**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+
+>Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
+
+> Please note - the current `import-spaces` does not support importing KAFKA APIs
 ## More Information
       
 - For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
