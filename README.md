@@ -136,7 +136,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
-
+> Please note - the current `export-spaces` does not support exporting KAFKA APIs
 ### Running the `import-spaces` command
 
 **Command Options**
@@ -163,6 +163,8 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 **Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
+
+> Please note - the current `import-spaces` does not support importing KAFKA APIs
 ## More Information
       
 - For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
