@@ -43,7 +43,7 @@ Download and install the CLI tool from Nuget: https://www.nuget.org/packages/Exp
 
 ### Session Cookies for CLI command
 
-You will meed to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands. For the `import-inspector-collections` CLI command, you will also need to obtain a cookie from an active Swagger Inspector session.
+You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands. For the `import-inspector-collections` CLI command, you will also need to obtain a cookie from an active Swagger Inspector session.
 
 From Swagger Inspector, navigate to your browser development tools, locate the application cookies and extract the `inspector-token` cookie.
 
