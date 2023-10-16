@@ -43,7 +43,7 @@ Download and install the CLI tool from Nuget: https://www.nuget.org/packages/Exp
 
 ### Session Cookies for CLI command
 
-You will meed to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands. For the `import-inspector-collections` CLI command, you will also need to obtain a cookie from an active Swagger Inspector session.
+You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands. For the `import-inspector-collections` CLI command, you will also need to obtain a cookie from an active Swagger Inspector session.
 
 From Swagger Inspector, navigate to your browser development tools, locate the application cookies and extract the `inspector-token` cookie.
 
@@ -77,6 +77,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 ### Running the `import-inspector-collections` command
 
 **Command Options**:
+
  ``` _____                  _                              ____   _   _
  | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
  |  _|   \ \/ / | '_ \  | |  / _ \  | '__|  / _ \     | |     | | | |
@@ -84,6 +85,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
  |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
                 |_|
 ```
+
 **Description:**
   > Import Swagger Inspector collections into SwaggerHub Explore
 
@@ -137,6 +139,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
 > Please note - the current `export-spaces` does not support exporting KAFKA APIs
+
 ### Running the `import-spaces` command
 
 **Command Options**
@@ -165,8 +168,70 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
 > Please note - the current `import-spaces` does not support importing KAFKA APIs
-## More Information
+
+## More Information on SwaggerHub Explore
       
 - For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
 - For SwaggerHub Explore docs, see - https://support.smartbear.com/swaggerhub-explore/docs
 - Try SwaggerHub Explore - https://try.smartbear.com/swaggerhub-explore
+
+
+## Development
+
+### Prerequisites 
+
+You will need the following:
+- .NET 7.0 (or above). Follow instructions for [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net70), [Linux](https://learn.microsoft.com/en-us/dotnet/core/install/linux), or [MacOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
+
+### Setting up
+
+Run the following commands to setup the repository for local development:
+
+```
+$ git clone https://github.com/SmartBear-DevRel/explore-cli.git
+$ cd explore-cli/src/explore.cli
+$ dotnet add package System.CommandLine --prerelease
+$ dotnet add package Microsoft.AspNetCore.StaticFiles
+$ dotnet add package NJsonSchema
+```
+
+### Build
+
+Run the following command to build the project (assumes you are in `src/Explore.CLI`):
+
+```
+$ dotnet build
+```
+
+### Test
+
+Run the following command to test the project (assumes you are in `src/Explore.CLI`):
+
+```
+$ dotnet test ../../test/Explore.Cli.Tests/Explore.Cli.Tests.csproj
+```
+
+### Pack the CLI
+
+Run the following command to pack the project (assumes you are in `src/Explore.CLI`):
+
+```
+$ dotnet pack
+```
+
+### Install and test the package locally
+
+Run the following command to _uninstall_ previous local versions, and install the newly packed version globally on your machine (assumes you are in `src/Explore.CLI`):
+
+```
+$ dotnet tool uninstall --global explore.cli
+$ dotnet tool install --global --add-source ./nupkg Explore.Cli
+```
+
+## Contributing
+
+This projects uses [SmartBear-DevRel](https://github.com/SmartBear-DevRel) GitHub organization's contributing guide. 
+
+You can obtain a copy of this contributing guide at [https://github.com/SmartBear-DevRel/.github/blob/main/profile/CONTRIBUTING.md](https://github.com/SmartBear-DevRel/.github/blob/main/profile/CONTRIBUTING.md).
+
+Read our contributing guide to learn about our development process, how to propose bugfixes and improvements for `Explore.CLI`.
