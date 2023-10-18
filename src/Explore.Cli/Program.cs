@@ -40,7 +40,7 @@ internal class Program
         importInspectorCollectionsCommand.Description = "Import Swagger Inspector collections into SwaggerHub Explore";
         rootCommand.Add(importInspectorCollectionsCommand);
 
-        importInspectorCollectionsCommand.SetHandler(async (u, ic, ec) => 
+        importInspectorCollectionsCommand.SetHandler(async (u, ic, ec) =>
         {
             await ImportFromInspector(u, ic, ec);
         }, username, inspectorCookie, exploreCookie);
@@ -49,7 +49,7 @@ internal class Program
         exportSpacesCommand.Description = "Export SwaggerHub Explore spaces to filesystem";
         rootCommand.Add(exportSpacesCommand);
 
-        exportSpacesCommand.SetHandler(async (ec, v) => 
+        exportSpacesCommand.SetHandler(async (ec, v) =>
         { await ExportSpaces(ec, v); }, exploreCookie, verbose);
 
         var importSpacesCommand = new Command("import-spaces") { exploreCookie, filePath, verbose };
@@ -59,9 +59,9 @@ internal class Program
         importSpacesCommand.SetHandler(async (ec, fp, v) =>
         { await ImportSpaces(ec, fp, v); }, exploreCookie, filePath, verbose);
 
-        AnsiConsole.Write( new FigletText("Explore.Cli").Color(new Color(133, 234, 45)) );
-        
-        return await rootCommand.InvokeAsync(args);  
+        AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
+
+        return await rootCommand.InvokeAsync(args);
     }
 
     internal static async Task ImportFromInspector(string inspectorUsername, string inspectorCookie, string exploreCookie)
@@ -81,13 +81,13 @@ internal class Program
         httpClient.DefaultRequestHeaders.Add("Cookie", inspectorCookie);
         var inspectorCollectionsResponse = await httpClient.GetAsync($"/repository/v1/{inspectorUsername}/collections");
 
-        if(inspectorCollectionsResponse.StatusCode == HttpStatusCode.Unauthorized)
+        if (inspectorCollectionsResponse.StatusCode == HttpStatusCode.Unauthorized)
         {
             AnsiConsole.MarkupLine("[red]Could not authenticate with provided inspector cookie[/]");
             return;
         }
 
-        if(inspectorCollectionsResponse.StatusCode == HttpStatusCode.OK)
+        if (inspectorCollectionsResponse.StatusCode == HttpStatusCode.OK)
         {
             var collections = await inspectorCollectionsResponse.Content.ReadFromJsonAsync<List<InspectorCollection>>();
             var panel = new Panel($"You have [green]{collections!.Count} collections[/] in inspector");
@@ -95,23 +95,23 @@ internal class Program
             panel.Header = new PanelHeader("Swagger Inspector Data").Centered();
             AnsiConsole.Write(panel);
             Console.WriteLine("");
-            
+
 
             var counter = 0;
-            foreach(var collection in collections)
+            foreach (var collection in collections)
             {
 
 
-                if(MappingHelper.CollectionEntriesNotLimitedToSoap(collection.CollectionEntries))
+                if (MappingHelper.CollectionEntriesNotLimitedToSoap(collection.CollectionEntries))
                 {
 
-                    var resultTable = new Table() { Title = new TableTitle(text: $"IMPORTING [green]{collection.Name}[/] TO EXPLORE"), Width = 100, UseSafeBorder = true};
+                    var resultTable = new Table() { Title = new TableTitle(text: $"IMPORTING [green]{collection.Name}[/] TO EXPLORE"), Width = 100, UseSafeBorder = true };
                     resultTable.AddColumn("Result");
                     resultTable.AddColumn(new TableColumn("Details").Centered());
 
                     //prepare request body
                     var cleanedCollectionName = UtilityHelper.CleanString(collection.Name);
-                    var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");   
+                    var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
 
                     exploreHttpClient.DefaultRequestHeaders.Clear();
                     exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
@@ -119,9 +119,9 @@ internal class Program
                     var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);
                     //Console.WriteLine(JsonSerializer.Serialize(new SpaceRequest() { Name = collection.Name }));
 
-                    if(spacesResponse.StatusCode == HttpStatusCode.Created)
+                    if (spacesResponse.StatusCode == HttpStatusCode.Created)
                     {
-                        var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true};
+                        var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
                         apiImportResults.AddColumn("Result");
                         apiImportResults.AddColumn("API Imported");
                         apiImportResults.AddColumn("Connection Imported");
@@ -129,20 +129,20 @@ internal class Program
                         //grab the space id
                         var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
 
-                        if(collection.CollectionEntries != null)
+                        if (collection.CollectionEntries != null)
                         {
-                            foreach(var entry in collection.CollectionEntries)
+                            foreach (var entry in collection.CollectionEntries)
                             {
                                 //now let's create an API entry in the space
                                 var cleanedAPIName = UtilityHelper.CleanString(entry.Name);
-                                var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from inspector on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json"); 
-                            
+                                var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from inspector on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
+
                                 exploreHttpClient.DefaultRequestHeaders.Clear();
                                 exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
                                 exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
                                 var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
 
-                                if(apiResponse.StatusCode == HttpStatusCode.Created)
+                                if (apiResponse.StatusCode == HttpStatusCode.Created)
                                 {
 
                                     var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
@@ -155,7 +155,7 @@ internal class Program
                                     exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
                                     var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
 
-                                    if(connectionResponse.StatusCode == HttpStatusCode.Created)
+                                    if (connectionResponse.StatusCode == HttpStatusCode.Created)
                                     {
                                         apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
                                     }
@@ -170,49 +170,49 @@ internal class Program
                                 }
                             }
 
-                            resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);  
+                            resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
                         }
-                        
+
                         AnsiConsole.Write(resultTable);
                         Console.WriteLine("");
                     }
-                    else 
+                    else
                     {
-                        switch(spacesResponse.StatusCode)
+                        switch (spacesResponse.StatusCode)
                         {
                             case HttpStatusCode.OK:
                                 // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
-                                resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));  
+                                resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
                                 AnsiConsole.Write(resultTable);
-                                Console.WriteLine("");   
-                                break;                          
-                            
+                                Console.WriteLine("");
+                                break;
+
                             case HttpStatusCode.Conflict:
-                                var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]")};
+                                var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
                                 apiImportResults.AddColumn("Result");
                                 apiImportResults.AddColumn("API Imported");
                                 apiImportResults.AddColumn("Connection Imported");
-                                apiImportResults.AddRow("skipped","","");
+                                apiImportResults.AddRow("skipped", "", "");
 
-                                resultTable.AddRow(new Markup("[orange3]skipped[/]"), apiImportResults);      
-                                AnsiConsole.Write(resultTable);  
+                                resultTable.AddRow(new Markup("[orange3]skipped[/]"), apiImportResults);
+                                AnsiConsole.Write(resultTable);
                                 Console.WriteLine("");
                                 break;
 
                             default:
-                                resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));  
+                                resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));
                                 AnsiConsole.Write(resultTable);
                                 Console.WriteLine("");
-                                break;                                             
-                        }        
+                                break;
+                        }
                     }
                 }
                 else
                 {
-                    var resultTable = new Table() { Title = new TableTitle(text: $"IMPORTING [green]{collection.Name}[/] TO EXPLORE"), Width = 100, UseSafeBorder = true};
+                    var resultTable = new Table() { Title = new TableTitle(text: $"IMPORTING [green]{collection.Name}[/] TO EXPLORE"), Width = 100, UseSafeBorder = true };
                     resultTable.AddColumn("Result");
                     resultTable.AddColumn(new TableColumn("Details").Centered());
-                    resultTable.AddRow(new Markup("[orange3]skipped[/]"), new Markup("[orange3]No transactions to import[/]"));  
+                    resultTable.AddRow(new Markup("[orange3]skipped[/]"), new Markup("[orange3]No transactions to import[/]"));
                     AnsiConsole.Write(resultTable);
                     Console.WriteLine("");
                 }
@@ -224,7 +224,7 @@ internal class Program
             Console.WriteLine("");
             AnsiConsole.MarkupLine("[green] All done! We're finished importing collections[/]");
         }
-        else 
+        else
         {
             AnsiConsole.MarkupLine($"[red]StatusCode {inspectorCollectionsResponse.StatusCode} returned from the Inspector API[/]");
         }
@@ -243,10 +243,10 @@ internal class Program
         //get spaces
         var spacesResponse = await httpClient.GetAsync("/spaces-api/v1/spaces?page=0&size=2000");
 
-        if(spacesResponse.StatusCode == HttpStatusCode.OK)
+        if (spacesResponse.StatusCode == HttpStatusCode.OK)
         {
             //ensure expected spaces response (not silent redirect to Auth provider)
-            if(!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
+            if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
             {
                 AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
                 return;
@@ -261,9 +261,9 @@ internal class Program
 
             var spacesToExport = new List<ExploreSpace>();
 
-            foreach(var space in spaces.Embedded.Spaces)
+            foreach (var space in spaces.Embedded.Spaces)
             {
-                var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{space.Name}[/]"), Width = 100, UseSafeBorder = true};
+                var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{space.Name}[/]"), Width = 100, UseSafeBorder = true };
                 resultTable.AddColumn("Result");
                 resultTable.AddColumn(new TableColumn("Details").Centered());
 
@@ -278,21 +278,21 @@ internal class Program
                 //get space APIs
                 var apisResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{space.Id}/apis?page=0&size=2000");
 
-                if(apisResponse.StatusCode == HttpStatusCode.OK)
+                if (apisResponse.StatusCode == HttpStatusCode.OK)
                 {
-                    var apiImportResults = new Table() { Title = new TableTitle(text: $"Processing [green]APIs[/]"), Width = 75, UseSafeBorder = true};
+                    var apiImportResults = new Table() { Title = new TableTitle(text: $"Processing [green]APIs[/]"), Width = 75, UseSafeBorder = true };
                     apiImportResults.AddColumn("Result");
                     apiImportResults.AddColumn("APIs Processed");
                     apiImportResults.AddColumn("Connections Processed");
-                                                            
+
                     var spaceAPIs = new List<ExploreApi>();
                     var apis = await apisResponse.Content.ReadFromJsonAsync<PagedApis>();
 
-                    if(apis?.Embedded != null)
+                    if (apis?.Embedded != null)
                     {
-                        foreach(var api in apis!.Embedded!.Apis!)
+                        foreach (var api in apis!.Embedded!.Apis!)
                         {
-                            if(string.Equals(api.Type, "REST", StringComparison.InvariantCultureIgnoreCase))
+                            if (string.Equals(api.Type, "REST", StringComparison.InvariantCultureIgnoreCase))
                             {
                                 var apiToExport = new ExploreApi() { Id = api.Id, Name = api.Name, Type = api.Type };
 
@@ -302,14 +302,14 @@ internal class Program
                                 httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
                                 var connectionsResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{space.Id}/apis/{api.Id}/connections?page=0&size=2000");
 
-                                if(connectionsResponse.StatusCode == HttpStatusCode.OK)
+                                if (connectionsResponse.StatusCode == HttpStatusCode.OK)
                                 {
                                     var connections = await connectionsResponse.Content.ReadFromJsonAsync<PagedConnections>();
                                     apiToExport.connections = new List<Connection>();
 
-                                    foreach(var connection in connections!.Embedded!.Connections!)
+                                    foreach (var connection in connections!.Embedded!.Connections!)
                                     {
-                                        apiToExport.connections.Add(connection); 
+                                        apiToExport.connections.Add(connection);
 
                                         apiImportResults.AddRow("[green]OK[/]", $"API '{api.Name}' processed", $"Connection {connection.Name} processed");
                                     }
@@ -319,7 +319,7 @@ internal class Program
                             }
                             else
                             {
-                                apiImportResults.AddRow("[orange3]skipped[/]", $"API '{api.Name}' skipped", $"Kafka not yet supported by export");                            
+                                apiImportResults.AddRow("[orange3]skipped[/]", $"API '{api.Name}' skipped", $"Kafka not yet supported by export");
                             }
 
                         }
@@ -329,25 +329,25 @@ internal class Program
                     }
                     else
                     {
-                        apiImportResults.AddRow("[orange3]skipped[/]", $"Space '{space.Name}' skipped", $"No APIs to export");                            
+                        apiImportResults.AddRow("[orange3]skipped[/]", $"Space '{space.Name}' skipped", $"No APIs to export");
                     }
 
-                    resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);  
-                }  
-                
-                if(verboseOutput != null && verboseOutput == true)
+                    resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
+                }
+
+                if (verboseOutput != null && verboseOutput == true)
                 {
                     AnsiConsole.Write(resultTable);
-                }            
+                }
             }
 
             // construct the export object
-            var export = new ExportSpaces() 
-            { 
-                Info = new Info() { ExportedAt = DateTime.UtcNow.ToLongTimeString() },
+            var export = new ExportSpaces()
+            {
+                Info = new Info() { ExportedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
                 ExploreSpaces = spacesToExport
             };
-            
+
             // export the file
             string exploreSpacesJson = JsonSerializer.Serialize(export);
             var filePath = Path.Combine(Environment.CurrentDirectory, "ExploreSpaces.json");
@@ -367,9 +367,9 @@ internal class Program
         try
         {
             using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {   
+            {
                 //let's verify it's a JSON file now
-                if(!UtilityHelper.IsJsonFile(filePath))
+                if (!UtilityHelper.IsJsonFile(filePath))
                 {
                     AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
                     return;
@@ -404,9 +404,9 @@ internal class Program
 
             //validate json against known (high level) schema
             var validationResult = await UtilityHelper.ValidateSchema(json, "ExploreSpaces.schema.json");
-            
 
-            if(!validationResult.isValid)
+
+            if (!validationResult.isValid)
             {
                 Console.WriteLine($"The provide json does not conform to the expected schema. Errors: {validationResult.Message}");
                 return;
@@ -419,47 +419,47 @@ internal class Program
             Console.WriteLine("");
 
             //iterate over spaces
-            if(exportedSpaces != null && exportedSpaces.ExploreSpaces != null)
+            if (exportedSpaces != null && exportedSpaces.ExploreSpaces != null)
             {
-                foreach(var exportedSpace in exportedSpaces.ExploreSpaces)
+                foreach (var exportedSpace in exportedSpaces.ExploreSpaces)
                 {
                     var spaceExists = await CheckSpaceExists(exploreCookie, exportedSpace.Id?.ToString(), verboseOutput);
 
-                    var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{exportedSpace.Name}[/]"), Width = 100, UseSafeBorder = true};
+                    var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{exportedSpace.Name}[/]"), Width = 100, UseSafeBorder = true };
                     resultTable.AddColumn("Result");
-                    resultTable.AddColumn(new TableColumn("Details").Centered());  
-                     
+                    resultTable.AddColumn(new TableColumn("Details").Centered());
 
-                    var importedSpace =  await UpsertSpace(exploreCookie, spaceExists, exportedSpace.Name, exportedSpace.Id.ToString());
 
-                    if(!string.IsNullOrEmpty(importedSpace.Name))
+                    var importedSpace = await UpsertSpace(exploreCookie, spaceExists, exportedSpace.Name, exportedSpace.Id.ToString());
+
+                    if (!string.IsNullOrEmpty(importedSpace.Name))
                     {
-                        var apiImportResults = new Table() { Title = new TableTitle(text: $"Importing Space [green]{importedSpace.Name}[/]"), Width = 75, UseSafeBorder = true};
+                        var apiImportResults = new Table() { Title = new TableTitle(text: $"Importing Space [green]{importedSpace.Name}[/]"), Width = 75, UseSafeBorder = true };
                         apiImportResults.AddColumn("Result");
                         apiImportResults.AddColumn("API Imported");
                         apiImportResults.AddColumn("Connection Imported");
 
                         //iterate over APIs
-                        if(exportedSpace.apis != null)
+                        if (exportedSpace.apis != null)
                         {
-                            foreach(var exportedAPI in exportedSpace.apis) //add type filter for now
+                            foreach (var exportedAPI in exportedSpace.apis) //add type filter for now
                             {
-                                if(string.Equals(exportedAPI.Type, "REST", StringComparison.OrdinalIgnoreCase))
+                                if (string.Equals(exportedAPI.Type, "REST", StringComparison.OrdinalIgnoreCase))
                                 {
                                     //remark - Improve DTO mapping here
                                     var importedApi = await UpsertApi(exploreCookie, spaceExists, importedSpace.Id.ToString(), exportedAPI.Id.ToString(), exportedAPI.Name, exportedAPI.Type, verboseOutput);
 
-                                    if(!string.IsNullOrEmpty(importedApi.Name))
+                                    if (!string.IsNullOrEmpty(importedApi.Name))
                                     {
                                         apiImportResults.AddRow("[green]OK[/]", $"API '{importedApi.Name}' imported", "");
                                         //iterate over Connections
-                                        if(exportedAPI.connections != null)
+                                        if (exportedAPI.connections != null)
                                         {
-                                            foreach(var exportedConnection in exportedAPI.connections) //add type filter for now
+                                            foreach (var exportedConnection in exportedAPI.connections) //add type filter for now
                                             {
                                                 var importedConnection = await UpsertConnection(exploreCookie, spaceExists, importedSpace.Id.ToString(), importedApi.Id.ToString(), exportedConnection?.Id?.ToString(), exportedConnection, verboseOutput);
 
-                                                if(importedConnection)
+                                                if (importedConnection)
                                                 {
                                                     apiImportResults.AddRow("[green]OK[/]", "", $"Connection '{exportedConnection?.Name}' imported");
                                                 }
@@ -468,23 +468,23 @@ internal class Program
 
                                     }
                                 }
-                                apiImportResults.AddRow("[orange3]skipped[/]", $"API '{exportedAPI.Name}' skipped", $"Kafka not yet supported by export");  
+                                apiImportResults.AddRow("[orange3]skipped[/]", $"API '{exportedAPI.Name}' skipped", $"Kafka not yet supported by export");
                             }
                         }
-                        
-                        resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);  
 
-                        if(verboseOutput == null || verboseOutput == false)
+                        resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
+
+                        if (verboseOutput == null || verboseOutput == false)
                         {
                             AnsiConsole.MarkupLine($"[green]\u2713 [/]{importedSpace.Name}");
                         }
                     }
 
-                    if(verboseOutput != null && verboseOutput == true)
+                    if (verboseOutput != null && verboseOutput == true)
                     {
                         AnsiConsole.Write(resultTable);
                     }
-                    
+
                 }
             }
 
@@ -499,14 +499,14 @@ internal class Program
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred: {ex.Message}");
-        }        
+        }
     }
 
 
     private static async Task<bool> CheckSpaceExists(string exploreCookie, string? id, bool? verboseOutput)
     {
 
-        if(string.IsNullOrEmpty(id))
+        if (string.IsNullOrEmpty(id))
         {
             return false;
         }
@@ -521,9 +521,9 @@ internal class Program
 
         var spacesResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{id}");
 
-        if(spacesResponse.StatusCode == HttpStatusCode.OK)
+        if (spacesResponse.StatusCode == HttpStatusCode.OK)
         {
-            if(!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
+            if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
             {
                 AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
                 throw new HttpRequestException("Please review your credentials, Unexpected response GET spaces endpoint");
@@ -532,19 +532,19 @@ internal class Program
             return true;
         }
 
-        
-        if(verboseOutput != null && verboseOutput == true)
+
+        if (verboseOutput != null && verboseOutput == true)
         {
             AnsiConsole.MarkupLine($"[orange3]StatusCode {spacesResponse.StatusCode} returned from the GetSpaceById API. New space will be created[/]");
         }
-        
+
         return false;
-    } 
+    }
 
     private static async Task<bool> CheckApiExists(string exploreCookie, string spaceId, string? id, bool? verboseOutput)
     {
 
-        if(string.IsNullOrEmpty(id))
+        if (string.IsNullOrEmpty(id))
         {
             return false;
         }
@@ -559,23 +559,23 @@ internal class Program
 
         var spacesResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{id}");
 
-        if(spacesResponse.StatusCode == HttpStatusCode.OK)
+        if (spacesResponse.StatusCode == HttpStatusCode.OK)
         {
             return true;
         }
-        
-        if(verboseOutput != null && verboseOutput == true)
+
+        if (verboseOutput != null && verboseOutput == true)
         {
             AnsiConsole.MarkupLine($"[orange3]StatusCode {spacesResponse.StatusCode} returned from the GetApiById API. New API will be created in the space.[/]");
-        }      
+        }
 
         return false;
-    } 
+    }
 
-   private static async Task<bool> CheckConnectionExists(string exploreCookie, string spaceId, string apiId, string? id, bool? verboseOutput)
+    private static async Task<bool> CheckConnectionExists(string exploreCookie, string spaceId, string apiId, string? id, bool? verboseOutput)
     {
 
-        if(string.IsNullOrEmpty(id))
+        if (string.IsNullOrEmpty(id))
         {
             return false;
         }
@@ -590,37 +590,37 @@ internal class Program
 
         var response = await httpClient.GetAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{apiId}/connections/{id}");
 
-        if(response.StatusCode == HttpStatusCode.OK)
+        if (response.StatusCode == HttpStatusCode.OK)
         {
             return true;
         }
 
-        if(verboseOutput != null && verboseOutput == true)
+        if (verboseOutput != null && verboseOutput == true)
         {
             AnsiConsole.MarkupLine($"[orange3]StatusCode {response.StatusCode} returned from the GetConnectionById API. New connection within API will be created.[/]");
-        }    
+        }
 
         return false;
-    }     
+    }
 
 
     private static async Task<SpaceResponse> UpsertSpace(string exploreCookie, bool spaceExists, string? name, string? id)
-{
+    {
         var httpClient = new HttpClient
         {
             BaseAddress = new Uri("https://api.explore.swaggerhub.com")
         };
 
         var spaceContent = new StringContent(JsonSerializer.Serialize(
-            new SpaceRequest() 
-            { 
-                Name = name 
+            new SpaceRequest()
+            {
+                Name = name
             }
-        ), Encoding.UTF8, "application/json");   
+        ), Encoding.UTF8, "application/json");
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        
+
         HttpResponseMessage? spacesResponse;
 
         if (string.IsNullOrEmpty(id) || !spaceExists)
@@ -644,14 +644,14 @@ internal class Program
             return await spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>() ?? new SpaceResponse();
         }
 
-        if(!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/json"))
+        if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/json"))
         {
             AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from POST/PUT spaces API for name: {name}, id:{id}[/]");
         }
         else
         {
             AnsiConsole.MarkupLine($"[red]StatusCode {spacesResponse.StatusCode} returned from the POST/PUT spaces API for name: {name}, id:{id}[/]");
-        }        
+        }
 
         return new SpaceResponse();
     }
@@ -671,11 +671,11 @@ internal class Program
                 Name = name,
                 Type = type
             }
-        ), Encoding.UTF8, "application/json"); 
+        ), Encoding.UTF8, "application/json");
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        
+
         HttpResponseMessage? apiResponse;
 
         if (spaceExists && await CheckApiExists(exploreCookie, spaceId, id, verboseOutput))
@@ -683,10 +683,10 @@ internal class Program
             // update the api
             apiResponse = await httpClient.PutAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{id}", apiContent);
 
-            if(apiResponse.StatusCode == HttpStatusCode.Conflict)
+            if (apiResponse.StatusCode == HttpStatusCode.Conflict)
             {
                 // swallow 409 as server is being overly strict
-                return new ApiResponse(){ Id = Guid.Parse(id ?? string.Empty), Name = name, Type = type};
+                return new ApiResponse() { Id = Guid.Parse(id ?? string.Empty), Name = name, Type = type };
             }
         }
         else
@@ -700,14 +700,14 @@ internal class Program
             return await apiResponse.Content.ReadFromJsonAsync<ApiResponse>() ?? new ApiResponse();
         }
 
-        if(!UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/json"))
+        if (!UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/json"))
         {
             AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from POST/PUT spaces API for name: {name}, id:{id}[/]");
         }
         else
         {
             AnsiConsole.WriteLine($"[red]StatusCode {apiResponse.StatusCode} returned from the POST spaces/{{id}}/apis for {name}[/]");
-        }        
+        }
 
         return new ApiResponse();
     }
@@ -724,7 +724,7 @@ internal class Program
 
 
         var connectionContent = new StringContent(JsonSerializer.Serialize(MappingHelper.MassageConnectionExportForImport(connection)), Encoding.UTF8, "application/json");
-        
+
         HttpResponseMessage? connectionResponse;
 
         if (spaceExists && await CheckConnectionExists(exploreCookie, spaceId, apiId, connectionId, verboseOutput))
@@ -739,10 +739,10 @@ internal class Program
         if (connectionResponse.IsSuccessStatusCode)
         {
             return true;
-        }  
-        else 
+        }
+        else
         {
-            if(!UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/json"))
+            if (!UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/json"))
             {
                 AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from the connections API for api: {apiId} and {connection?.Name}[/]");
             }
@@ -750,11 +750,11 @@ internal class Program
             {
                 AnsiConsole.WriteLine($"[red]StatusCode {connectionResponse.StatusCode} returned from the connections API for api: {apiId} and {connection?.Name}[/]");
 
-                            var message = await connectionResponse.Content.ReadAsStringAsync();
-            AnsiConsole.WriteLine($"error: {message}");        
-            } 
+                var message = await connectionResponse.Content.ReadAsStringAsync();
+                AnsiConsole.WriteLine($"error: {message}");
+            }
 
-        }        
+        }
 
         return false;
     }
