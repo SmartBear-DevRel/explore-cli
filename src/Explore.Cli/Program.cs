@@ -341,14 +341,10 @@ internal class Program
                 }
             }
 
-            // format date and time
-            DateTime now = DateTime.UtcNow;
-            string formattedDate = now.ToLongDateString() + " " + now.ToLongTimeString();
-
             // construct the export object
             var export = new ExportSpaces()
             {
-                Info = new Info() { ExportedAt = formattedDate },
+                Info = new Info() { ExportedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
                 ExploreSpaces = spacesToExport
             };
 
