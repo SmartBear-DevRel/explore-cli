@@ -30,6 +30,9 @@ internal class Program
         var exportPath = new Option<string>(name: "--export-path", description: "The path for exporting files. It can be either a relative or absolute path") { IsRequired = false };
         exportPath.AddAlias("-ep");
 
+        var exportName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
+        exportName.AddAlias("-en");
+
         var verbose = new Option<bool?>(name: "--verbose", description: "Include verbose output during processing") { IsRequired = false };
         verbose.AddAlias("-v");
 
@@ -48,12 +51,12 @@ internal class Program
             await ImportFromInspector(u, ic, ec);
         }, username, inspectorCookie, exploreCookie);
 
-        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportPath, verbose };
+        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportPath, exportName, verbose };
         exportSpacesCommand.Description = "Export SwaggerHub Explore spaces to filesystem";
         rootCommand.Add(exportSpacesCommand);
 
-        exportSpacesCommand.SetHandler(async (ec, ep, v) =>
-        { await ExportSpaces(ec, ep, v); }, exploreCookie, exportPath, verbose);
+        exportSpacesCommand.SetHandler(async (ec, ep, en, v) =>
+        { await ExportSpaces(ec, ep, en, v); }, exploreCookie, exportPath, exportName, verbose);
 
         var importSpacesCommand = new Command("import-spaces") { exploreCookie, filePath, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
@@ -233,7 +236,7 @@ internal class Program
         }
     }
 
-    internal static async Task ExportSpaces(string exploreCookie, string exportPath, bool? verboseOutput)
+    internal static async Task ExportSpaces(string exploreCookie, string exportPath, string exportName, bool? verboseOutput)
     {
         var httpClient = new HttpClient
         {
@@ -351,6 +354,9 @@ internal class Program
                 ExploreSpaces = spacesToExport
             };
 
+            // set the file name if provided
+            var fileName = string.IsNullOrEmpty(exportName) ? "ExploreSpaces.json" : $"{exportName}.json";
+
             // set the export path if provided
             string filePath;
             if (!string.IsNullOrEmpty(exportPath))
@@ -363,7 +369,7 @@ internal class Program
                 }
 
                 // combine the path and filename
-                filePath = Path.Combine(exportPath, "ExploreSpaces.json");
+                filePath = Path.Combine(exportPath, fileName);
 
                 if (!Directory.Exists(exportPath))
                 {
@@ -373,7 +379,7 @@ internal class Program
             else
             {
                 // if no exportPath is provided, use the current directory
-                filePath = Path.Combine(Environment.CurrentDirectory, "ExploreSpaces.json");
+                filePath = Path.Combine(Environment.CurrentDirectory, fileName);
             }
 
             // export the file
