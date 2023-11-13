@@ -27,6 +27,9 @@ internal class Program
         var filePath = new Option<string>(name: "--file-path", description: "The path to the file used for importing data") { IsRequired = true };
         filePath.AddAlias("-fp");
 
+        var exportPath = new Option<string>(name: "--export-path", description: "The path for exporting files. It can be either a relative or absolute path") { IsRequired = false };
+        exportPath.AddAlias("-ep");
+
         var verbose = new Option<bool?>(name: "--verbose", description: "Include verbose output during processing") { IsRequired = false };
         verbose.AddAlias("-v");
 
@@ -45,12 +48,12 @@ internal class Program
             await ImportFromInspector(u, ic, ec);
         }, username, inspectorCookie, exploreCookie);
 
-        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, verbose };
+        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportPath, verbose };
         exportSpacesCommand.Description = "Export SwaggerHub Explore spaces to filesystem";
         rootCommand.Add(exportSpacesCommand);
 
-        exportSpacesCommand.SetHandler(async (ec, v) =>
-        { await ExportSpaces(ec, v); }, exploreCookie, verbose);
+        exportSpacesCommand.SetHandler(async (ec, ep, v) =>
+        { await ExportSpaces(ec, ep, v); }, exploreCookie, exportPath, verbose);
 
         var importSpacesCommand = new Command("import-spaces") { exploreCookie, filePath, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
@@ -230,7 +233,7 @@ internal class Program
         }
     }
 
-    internal static async Task ExportSpaces(string exploreCookie, bool? verboseOutput)
+    internal static async Task ExportSpaces(string exploreCookie, string exportPath, bool? verboseOutput)
     {
         var httpClient = new HttpClient
         {
@@ -348,10 +351,33 @@ internal class Program
                 ExploreSpaces = spacesToExport
             };
 
+            // set the export path if provided
+            string filePath;
+            if (!string.IsNullOrEmpty(exportPath))
+            {
+                // check if the exportPath is an absolute path
+                if (!Path.IsPathRooted(exportPath))
+                {
+                    // if not, make it relative to the current directory
+                    exportPath = Path.Combine(Environment.CurrentDirectory, exportPath);
+                }
+
+                // combine the path and filename
+                filePath = Path.Combine(exportPath, "ExploreSpaces.json");
+
+                if (!Directory.Exists(exportPath))
+                {
+                    Directory.CreateDirectory(exportPath);
+                }
+            }
+            else
+            {
+                // if no exportPath is provided, use the current directory
+                filePath = Path.Combine(Environment.CurrentDirectory, "ExploreSpaces.json");
+            }
+
             // export the file
             string exploreSpacesJson = JsonSerializer.Serialize(export);
-            var filePath = Path.Combine(Environment.CurrentDirectory, "ExploreSpaces.json");
-
             using (StreamWriter streamWriter = new StreamWriter(filePath))
             {
                 streamWriter.Write(exploreSpacesJson);
