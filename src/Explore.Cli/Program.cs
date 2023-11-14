@@ -30,8 +30,11 @@ internal class Program
         var exportPath = new Option<string>(name: "--export-path", description: "The path for exporting files. It can be either a relative or absolute path") { IsRequired = false };
         exportPath.AddAlias("-ep");
 
-        var exportName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
-        exportName.AddAlias("-en");
+        var exportFileName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
+        exportFileName.AddAlias("-en");
+
+        var names = new Option<string>(name: "--names", description: "The names of the spaces to export") { IsRequired = false };
+        names.AddAlias("-n");
 
         var verbose = new Option<bool?>(name: "--verbose", description: "Include verbose output during processing") { IsRequired = false };
         verbose.AddAlias("-v");
@@ -51,12 +54,12 @@ internal class Program
             await ImportFromInspector(u, ic, ec);
         }, username, inspectorCookie, exploreCookie);
 
-        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportPath, exportName, verbose };
+        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportPath, exportFileName, names, verbose };
         exportSpacesCommand.Description = "Export SwaggerHub Explore spaces to filesystem";
         rootCommand.Add(exportSpacesCommand);
 
-        exportSpacesCommand.SetHandler(async (ec, ep, en, v) =>
-        { await ExportSpaces(ec, ep, en, v); }, exploreCookie, exportPath, exportName, verbose);
+        exportSpacesCommand.SetHandler(async (ec, ep, en, n, v) =>
+        { await ExportSpaces(ec, ep, en, n, v); }, exploreCookie, exportPath, exportFileName, names, verbose);
 
         var importSpacesCommand = new Command("import-spaces") { exploreCookie, filePath, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
@@ -236,7 +239,7 @@ internal class Program
         }
     }
 
-    internal static async Task ExportSpaces(string exploreCookie, string exportPath, string exportName, bool? verboseOutput)
+    internal static async Task ExportSpaces(string exploreCookie, string exportPath, string exportFileName, string names, bool? verboseOutput)
     {
         var httpClient = new HttpClient
         {
@@ -258,17 +261,26 @@ internal class Program
                 return;
             }
 
+            var namesList = names?.Split(',')
+                .Select(name => name.Trim())
+                .ToList();
             var spaces = await spacesResponse.Content.ReadFromJsonAsync<PagedSpaces>();
             var panel = new Panel($"You have [green]{spaces!.Embedded!.Spaces!.Count} spaces[/] in explore");
             panel.Width = 100;
             panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();
             AnsiConsole.Write(panel);
+            Console.WriteLine(namesList?.Count > 0 ? $"Exporting spaces: {string.Join(", ", namesList)}" : "Exporting all spaces");
             Console.WriteLine("processing...");
 
             var spacesToExport = new List<ExploreSpace>();
 
             foreach (var space in spaces.Embedded.Spaces)
             {
+                if (namesList?.Count > 0 && space.Name != null && !namesList.Contains(space.Name))
+                {
+                    continue;
+                }
+
                 var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{space.Name}[/]"), Width = 100, UseSafeBorder = true };
                 resultTable.AddColumn("Result");
                 resultTable.AddColumn(new TableColumn("Details").Centered());
@@ -355,7 +367,7 @@ internal class Program
             };
 
             // set the file name if provided
-            var fileName = string.IsNullOrEmpty(exportName) ? "ExploreSpaces.json" : $"{exportName}.json";
+            var fileName = string.IsNullOrEmpty(exportFileName) ? "ExploreSpaces.json" : $"{exportFileName}.json";
 
             // set the export path if provided
             string filePath;
