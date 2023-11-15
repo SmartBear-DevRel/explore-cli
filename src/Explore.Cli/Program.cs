@@ -268,6 +268,37 @@ internal class Program
             var panel = new Panel($"You have [green]{spaces!.Embedded!.Spaces!.Count} spaces[/] in explore");
             panel.Width = 100;
             panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();
+
+            // set the file name if provided
+            string fileName = "ExploreSpaces.json";
+            if (string.IsNullOrWhiteSpace(exportFileName))
+            {
+                AnsiConsole.MarkupLine($"[red]The file name cannot be empty. Please review.[/]");
+                return;
+            }
+
+            // check if the file has a valid extension
+            if (!exportFileName.Contains('.'))
+            {
+                fileName = $"{exportFileName}.json";
+            }
+            else if (exportFileName.EndsWith(".json"))
+            {
+                fileName = exportFileName;
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]The file name provided has an invalid extension. Please review.[/]");
+                return;
+            }
+
+            // check for invalid characters in the file name
+            if (exportFileName.Contains('\\') || exportFileName.Contains('/'))
+            {
+                AnsiConsole.MarkupLine($"[red]The file name provided contains invalid characters. Please review.[/]");
+                return;
+            }
+            
             AnsiConsole.Write(panel);
             Console.WriteLine(namesList?.Count > 0 ? $"Exporting spaces: {string.Join(", ", namesList)}" : "Exporting all spaces");
             Console.WriteLine("processing...");
@@ -280,6 +311,8 @@ internal class Program
                 {
                     continue;
                 }
+
+
 
                 var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{space.Name}[/]"), Width = 100, UseSafeBorder = true };
                 resultTable.AddColumn("Result");
@@ -366,8 +399,7 @@ internal class Program
                 ExploreSpaces = spacesToExport
             };
 
-            // set the file name if provided
-            var fileName = string.IsNullOrEmpty(exportFileName) ? "ExploreSpaces.json" : $"{exportFileName}.json";
+
 
             // set the export path if provided
             string filePath;
