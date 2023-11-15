@@ -131,7 +131,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
 **Options:**
   > -ec, --explore-cookie <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
-  > -ep, --export-path <export-path>                   The path to the directory used for exporting data. It can be either relative or absolute
+  > -fp, --file-path <file-path>                       The path to the directory used for exporting data. It can be either relative or absolute
   > -en, --export-name <export-name>                   The name of the exported file
   > -n, --names <names>                                A comma-separated list of space names to export
   > -v, --verbose                                      Include verbose output during processing
