@@ -24,8 +24,8 @@ internal class Program
         var exploreCookie = new Option<string>(name: "--explore-cookie", description: "A valid and active SwaggerHub Explore session cookie") { IsRequired = true };
         exploreCookie.AddAlias("-ec");
 
-        var filePath = new Option<string>(name: "--file-path", description: "The path to the file used for importing data") { IsRequired = true };
-        filePath.AddAlias("-fp");
+        var importFilePath = new Option<string>(name: "--file-path", description: "The path to the file used for importing data") { IsRequired = true };
+        importFilePath.AddAlias("-fp");
 
         var exportFilePath = new Option<string>(name: "--file-path", description: "The path for exporting files. It can be either a relative or absolute path") { IsRequired = false };
         exportFilePath.AddAlias("-fp");
@@ -61,12 +61,12 @@ internal class Program
         exportSpacesCommand.SetHandler(async (ec, fp, en, n, v) =>
         { await ExportSpaces(ec, fp, en, n, v); }, exploreCookie, exportFilePath, exportFileName, names, verbose);
 
-        var importSpacesCommand = new Command("import-spaces") { exploreCookie, filePath, verbose };
+        var importSpacesCommand = new Command("import-spaces") { exploreCookie, importFilePath, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
         rootCommand.Add(importSpacesCommand);
 
         importSpacesCommand.SetHandler(async (ec, fp, v) =>
-        { await ImportSpaces(ec, fp, v); }, exploreCookie, filePath, verbose);
+        { await ImportSpaces(ec, fp, v); }, exploreCookie, importFilePath, verbose);
 
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
@@ -316,8 +316,6 @@ internal class Program
                     continue;
                 }
 
-
-
                 var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{space.Name}[/]"), Width = 100, UseSafeBorder = true };
                 resultTable.AddColumn("Result");
                 resultTable.AddColumn(new TableColumn("Details").Centered());
@@ -403,8 +401,6 @@ internal class Program
                 ExploreSpaces = spacesToExport
             };
 
-
-
             // set the export path if provided
             string filePath;
             if (!string.IsNullOrEmpty(exportPath))
@@ -421,7 +417,20 @@ internal class Program
 
                 if (!Directory.Exists(exportPath))
                 {
-                    Directory.CreateDirectory(exportPath);
+                    try
+                    {
+                        Directory.CreateDirectory(exportPath);
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
+                        return;
+                    }
                 }
             }
             else
@@ -432,9 +441,22 @@ internal class Program
 
             // export the file
             string exploreSpacesJson = JsonSerializer.Serialize(export);
-            using (StreamWriter streamWriter = new StreamWriter(filePath))
+            try
             {
-                streamWriter.Write(exploreSpacesJson);
+                using (StreamWriter streamWriter = new StreamWriter(filePath))
+                {
+                    streamWriter.Write(exploreSpacesJson);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
+                return;
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
+                return;
             }
 
             AnsiConsole.MarkupLine($"[green] All done! {spacesToExport.Count()} of {spaces!.Embedded!.Spaces!.Count} spaces exported to: {filePath} [/]");
