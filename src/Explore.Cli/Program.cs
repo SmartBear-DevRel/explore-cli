@@ -27,8 +27,8 @@ internal class Program
         var filePath = new Option<string>(name: "--file-path", description: "The path to the file used for importing data") { IsRequired = true };
         filePath.AddAlias("-fp");
 
-        var exportPath = new Option<string>(name: "--export-path", description: "The path for exporting files. It can be either a relative or absolute path") { IsRequired = false };
-        exportPath.AddAlias("-ep");
+        var exportFilePath = new Option<string>(name: "--file-path", description: "The path for exporting files. It can be either a relative or absolute path") { IsRequired = false };
+        exportFilePath.AddAlias("-fp");
 
         var exportFileName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
         exportFileName.AddAlias("-en");
@@ -54,12 +54,12 @@ internal class Program
             await ImportFromInspector(u, ic, ec);
         }, username, inspectorCookie, exploreCookie);
 
-        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportPath, exportFileName, names, verbose };
+        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportFilePath, exportFileName, names, verbose };
         exportSpacesCommand.Description = "Export SwaggerHub Explore spaces to filesystem";
         rootCommand.Add(exportSpacesCommand);
 
-        exportSpacesCommand.SetHandler(async (ec, ep, en, n, v) =>
-        { await ExportSpaces(ec, ep, en, n, v); }, exploreCookie, exportPath, exportFileName, names, verbose);
+        exportSpacesCommand.SetHandler(async (ec, fp, en, n, v) =>
+        { await ExportSpaces(ec, fp, en, n, v); }, exploreCookie, exportFilePath, exportFileName, names, verbose);
 
         var importSpacesCommand = new Command("import-spaces") { exploreCookie, filePath, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
@@ -271,34 +271,38 @@ internal class Program
 
             // set the file name if provided
             string fileName = "ExploreSpaces.json";
-            if (string.IsNullOrWhiteSpace(exportFileName))
+            if (!string.IsNullOrEmpty(exportFileName))
             {
-                AnsiConsole.MarkupLine($"[red]The file name cannot be empty. Please review.[/]");
-                return;
+                // check if the file has a valid extension
+                if (!exportFileName.Contains('.'))
+                {
+                    fileName = $"{exportFileName}.json";
+                }
+                else if (exportFileName.EndsWith(".json"))
+                {
+                    fileName = exportFileName;
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[red]The file name provided has an invalid extension. Please review.[/]");
+                    return;
+                }
+
+                // check for invalid characters in the file name
+                if (exportFileName.Contains('\\') || exportFileName.Contains('/'))
+                {
+                    AnsiConsole.MarkupLine($"[red]The file name provided contains invalid characters. Please review.[/]");
+                    return;
+                }
+
+                // check for white space input
+                if (string.IsNullOrWhiteSpace(exportFileName))
+                {
+                    AnsiConsole.MarkupLine($"[red]The file name cannot be empty. Please review.[/]");
+                    return;
+                }
             }
 
-            // check if the file has a valid extension
-            if (!exportFileName.Contains('.'))
-            {
-                fileName = $"{exportFileName}.json";
-            }
-            else if (exportFileName.EndsWith(".json"))
-            {
-                fileName = exportFileName;
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[red]The file name provided has an invalid extension. Please review.[/]");
-                return;
-            }
-
-            // check for invalid characters in the file name
-            if (exportFileName.Contains('\\') || exportFileName.Contains('/'))
-            {
-                AnsiConsole.MarkupLine($"[red]The file name provided contains invalid characters. Please review.[/]");
-                return;
-            }
-            
             AnsiConsole.Write(panel);
             Console.WriteLine(namesList?.Count > 0 ? $"Exporting spaces: {string.Join(", ", namesList)}" : "Exporting all spaces");
             Console.WriteLine("processing...");
