@@ -269,37 +269,17 @@ internal class Program
             panel.Width = 100;
             panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();
 
-            // set the file name if provided
-            string fileName = "ExploreSpaces.json";
-            if (!string.IsNullOrEmpty(exportFileName))
+            // validate the file name if provided
+            if (string.IsNullOrEmpty(exportFileName))
             {
-                // check if the file has a valid extension
-                if (!exportFileName.Contains('.'))
+                // use default if not provided
+                exportFileName = "ExploreSpaces.json";
+            }
+            else
+            {
+                if (!UtilityHelper.IsValidateFileName(ref exportFileName))
                 {
-                    fileName = $"{exportFileName}.json";
-                }
-                else if (exportFileName.EndsWith(".json"))
-                {
-                    fileName = exportFileName;
-                }
-                else
-                {
-                    AnsiConsole.MarkupLine($"[red]The file name provided has an invalid extension. Please review.[/]");
-                    return;
-                }
-
-                // check for invalid characters in the file name
-                if (exportFileName.Contains('\\') || exportFileName.Contains('/'))
-                {
-                    AnsiConsole.MarkupLine($"[red]The file name provided contains invalid characters. Please review.[/]");
-                    return;
-                }
-
-                // check for white space input
-                if (string.IsNullOrWhiteSpace(exportFileName))
-                {
-                    AnsiConsole.MarkupLine($"[red]The file name cannot be empty. Please review.[/]");
-                    return;
+                    return; // file name is invalid, exit
                 }
             }
 
@@ -413,7 +393,7 @@ internal class Program
                 }
 
                 // combine the path and filename
-                filePath = Path.Combine(exportPath, fileName);
+                filePath = Path.Combine(exportPath, exportFileName);
 
                 if (!Directory.Exists(exportPath))
                 {
@@ -436,8 +416,9 @@ internal class Program
             else
             {
                 // if no exportPath is provided, use the current directory
-                filePath = Path.Combine(Environment.CurrentDirectory, fileName);
+                filePath = Path.Combine(Environment.CurrentDirectory, exportFileName);
             }
+
 
             // export the file
             string exploreSpacesJson = JsonSerializer.Serialize(export);

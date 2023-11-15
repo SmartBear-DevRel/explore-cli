@@ -3,39 +3,41 @@ using System.Net.Mime;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.StaticFiles;
 using NJsonSchema;
+using Spectre.Console;
 
 public static class UtilityHelper
 {
     public static string CleanString(string? inputName)
     {
-        if(string.IsNullOrEmpty(inputName))
+        if (string.IsNullOrEmpty(inputName))
         {
             return string.Empty;
         }
 
-        try 
+        try
         {
-           return Regex.Replace(inputName, @"[^a-zA-Z0-9 ._-]", "", RegexOptions.None, TimeSpan.FromSeconds(2));
+            return Regex.Replace(inputName, @"[^a-zA-Z0-9 ._-]", "", RegexOptions.None, TimeSpan.FromSeconds(2));
         }
         // return empty string rather than timeout
-        catch (RegexMatchTimeoutException) {
-           return String.Empty;
+        catch (RegexMatchTimeoutException)
+        {
+            return String.Empty;
         }
     }
 
     public static bool IsContentTypeExpected(HttpContentHeaders? headers, string expectedContentType)
     {
-        if(headers == null)
+        if (headers == null)
         {
             return false;
         }
-        
-        foreach(var header in headers)
+
+        foreach (var header in headers)
         {
 
-            if(string.Equals(header.Key, "Content-Type", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(header.Key, "Content-Type", StringComparison.OrdinalIgnoreCase))
             {
-                if(string.Equals(header.Value.FirstOrDefault(), expectedContentType, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(header.Value.FirstOrDefault(), expectedContentType, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -58,8 +60,8 @@ public static class UtilityHelper
             if (!provider.TryGetContentType(filePath, out string contentType))
             {
                 return false;
-            }            
-            
+            }
+
             return string.Equals(contentType, MediaTypeNames.Application.Json, StringComparison.OrdinalIgnoreCase);
         }
 
@@ -67,7 +69,7 @@ public static class UtilityHelper
     }
 
     public static async Task<SchemaValidationResult> ValidateSchema(string jsonAsString, string schemaName)
-    {        
+    {
         var validationResult = new SchemaValidationResult();
         var schemaAsString = @"{
   ""$schema"": ""https://json-schema.org/draft/2019-09/schema"",
@@ -168,20 +170,60 @@ public static class UtilityHelper
         var schema = await JsonSchema.FromJsonAsync(schemaAsString);
         var errors = schema.Validate(jsonAsString);
 
-        if(errors.Any())
+        if (errors.Any())
         {
             var msg = $"‣ {errors.Count} total errors\n" +
             string.Join("", errors
                 .Select(e => $"  ‣ {e}[/] at " +
                             $"{e.LineNumber}:{e.LinePosition}[/]\n"));
-            
+
             validationResult.Message = msg;
         }
         else
         {
             validationResult.isValid = true;
-        } 
+        }
 
         return validationResult;
+    }
+
+    public static bool IsValidateFileName(ref string fileName)
+    {
+        if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) > 0)
+        {
+            AnsiConsole.MarkupLine($"[red]The file name '{fileName}' contains invalid characters. Please review.[/]");
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            AnsiConsole.MarkupLine($"[red]The file name cannot be empty. Please review.[/]");
+            return false;
+        }
+
+        if (fileName.Contains('.'))
+        {
+            if (fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                fileName = $"{fileName}";
+                return true;
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]The file name '{fileName}' has an invalid extension. Please review.[/]");
+                return false;
+            }
+        }
+        else
+        {
+            fileName = $"{fileName}.json";
+        }
+
+        return true;
+    }
+
+    private static bool IsValidFilePath(string filePath)
+    {
+        return filePath.IndexOfAny(Path.GetInvalidPathChars()) <= 0;
     }
 }
