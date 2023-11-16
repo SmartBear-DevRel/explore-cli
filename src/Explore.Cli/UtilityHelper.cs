@@ -187,8 +187,13 @@ public static class UtilityHelper
         return validationResult;
     }
 
-    public static bool IsValidateFileName(ref string fileName)
+    public static bool IsValidFileName(ref string fileName)
     {
+        if (fileName == null)
+        {
+            return false;
+        }
+
         if (fileName.IndexOfAny(Path.GetInvalidFileNameChars()) > 0)
         {
             AnsiConsole.MarkupLine($"[red]The file name '{fileName}' contains invalid characters. Please review.[/]");
@@ -222,8 +227,54 @@ public static class UtilityHelper
         return true;
     }
 
-    private static bool IsValidFilePath(string filePath)
+    public static bool IsValidFilePath(ref string filePath)
     {
-        return filePath.IndexOfAny(Path.GetInvalidPathChars()) <= 0;
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            AnsiConsole.MarkupLine($"[red]The file path cannot be empty. Please review.[/]");
+            return false;
+        }
+
+        // the following characters are not detected by GetInvalidPathChars() but are invalid on Windows as a path
+        var invalidChars = new List<char>(Path.GetInvalidPathChars())
+        {
+            '<',
+            '>',
+            '"',
+            '?',
+            '*',
+        }.ToArray();
+
+        if (filePath.IndexOfAny(invalidChars) > 0)
+        {
+            AnsiConsole.MarkupLine($"[red]The file path '{filePath}' contains invalid characters. Please review.[/]");
+            return false;
+        }
+
+        // check if the exportPath is an absolute path
+        if (!Path.IsPathRooted(filePath))
+        {
+            // if not, make it relative to the current directory
+            filePath = Path.Combine(Environment.CurrentDirectory, filePath);
+        }
+
+        if (!Directory.Exists(filePath))
+        {
+            try
+            {
+                Directory.CreateDirectory(filePath);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
+                return false;
+            }
+        }
+        return true;
     }
 }

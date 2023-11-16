@@ -239,7 +239,7 @@ internal class Program
         }
     }
 
-    internal static async Task ExportSpaces(string exploreCookie, string exportPath, string exportFileName, string names, bool? verboseOutput)
+    internal static async Task ExportSpaces(string exploreCookie, string filePath, string exportFileName, string names, bool? verboseOutput)
     {
         var httpClient = new HttpClient
         {
@@ -275,13 +275,25 @@ internal class Program
                 // use default if not provided
                 exportFileName = "ExploreSpaces.json";
             }
-            else
+            else if (!UtilityHelper.IsValidFileName(ref exportFileName))
             {
-                if (!UtilityHelper.IsValidateFileName(ref exportFileName))
-                {
-                    return; // file name is invalid, exit
-                }
+                return; // file name is invalid, exit
             }
+
+            // validate the export path if provided
+            // string filePath;
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // use default (current directory) if not provided
+                filePath = Path.Combine(Environment.CurrentDirectory, exportFileName);
+            }
+            else if (!UtilityHelper.IsValidFilePath(ref filePath))
+            {
+                return; // file path is invalid, exit
+            }
+
+            // combine the path and filename
+            filePath = Path.Combine(filePath, exportFileName);
 
             AnsiConsole.Write(panel);
             Console.WriteLine(namesList?.Count > 0 ? $"Exporting spaces: {string.Join(", ", namesList)}" : "Exporting all spaces");
@@ -380,44 +392,6 @@ internal class Program
                 Info = new Info() { ExportedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
                 ExploreSpaces = spacesToExport
             };
-
-            // set the export path if provided
-            string filePath;
-            if (!string.IsNullOrEmpty(exportPath))
-            {
-                // check if the exportPath is an absolute path
-                if (!Path.IsPathRooted(exportPath))
-                {
-                    // if not, make it relative to the current directory
-                    exportPath = Path.Combine(Environment.CurrentDirectory, exportPath);
-                }
-
-                // combine the path and filename
-                filePath = Path.Combine(exportPath, exportFileName);
-
-                if (!Directory.Exists(exportPath))
-                {
-                    try
-                    {
-                        Directory.CreateDirectory(exportPath);
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
-                        return;
-                    }
-                }
-            }
-            else
-            {
-                // if no exportPath is provided, use the current directory
-                filePath = Path.Combine(Environment.CurrentDirectory, exportFileName);
-            }
 
 
             // export the file
