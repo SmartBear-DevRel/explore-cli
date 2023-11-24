@@ -110,6 +110,7 @@ public class UtilityHelperTests
     [Theory]
     [InlineData("test")]
     [InlineData("test/test")]
+    [InlineData("test\\test")]
     [InlineData("test.test")]
     public void IsValidFilePath_Should_Pass(string input)
     {

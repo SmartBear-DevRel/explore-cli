@@ -285,7 +285,7 @@ internal class Program
             if (string.IsNullOrEmpty(filePath))
             {
                 // use default (current directory) if not provided
-                filePath = Path.Combine(Environment.CurrentDirectory, exportFileName);
+                filePath = Environment.CurrentDirectory;
             }
             else if (!UtilityHelper.IsValidFilePath(ref filePath))
             {
