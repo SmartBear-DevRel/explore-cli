@@ -24,8 +24,17 @@ internal class Program
         var exploreCookie = new Option<string>(name: "--explore-cookie", description: "A valid and active SwaggerHub Explore session cookie") { IsRequired = true };
         exploreCookie.AddAlias("-ec");
 
-        var filePath = new Option<string>(name: "--file-path", description: "The path to the file used for importing data") { IsRequired = true };
-        filePath.AddAlias("-fp");
+        var importFilePath = new Option<string>(name: "--file-path", description: "The path to the file used for importing data") { IsRequired = true };
+        importFilePath.AddAlias("-fp");
+
+        var exportFilePath = new Option<string>(name: "--file-path", description: "The path for exporting files. It can be either a relative or absolute path") { IsRequired = false };
+        exportFilePath.AddAlias("-fp");
+
+        var exportFileName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
+        exportFileName.AddAlias("-en");
+
+        var names = new Option<string>(name: "--names", description: "The names of the spaces to export") { IsRequired = false };
+        names.AddAlias("-n");
 
         var verbose = new Option<bool?>(name: "--verbose", description: "Include verbose output during processing") { IsRequired = false };
         verbose.AddAlias("-v");
@@ -45,19 +54,19 @@ internal class Program
             await ImportFromInspector(u, ic, ec);
         }, username, inspectorCookie, exploreCookie);
 
-        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, verbose };
+        var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportFilePath, exportFileName, names, verbose };
         exportSpacesCommand.Description = "Export SwaggerHub Explore spaces to filesystem";
         rootCommand.Add(exportSpacesCommand);
 
-        exportSpacesCommand.SetHandler(async (ec, v) =>
-        { await ExportSpaces(ec, v); }, exploreCookie, verbose);
+        exportSpacesCommand.SetHandler(async (ec, fp, en, n, v) =>
+        { await ExportSpaces(ec, fp, en, n, v); }, exploreCookie, exportFilePath, exportFileName, names, verbose);
 
-        var importSpacesCommand = new Command("import-spaces") { exploreCookie, filePath, verbose };
+        var importSpacesCommand = new Command("import-spaces") { exploreCookie, importFilePath, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
         rootCommand.Add(importSpacesCommand);
 
         importSpacesCommand.SetHandler(async (ec, fp, v) =>
-        { await ImportSpaces(ec, fp, v); }, exploreCookie, filePath, verbose);
+        { await ImportSpaces(ec, fp, v); }, exploreCookie, importFilePath, verbose);
 
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
@@ -230,7 +239,7 @@ internal class Program
         }
     }
 
-    internal static async Task ExportSpaces(string exploreCookie, bool? verboseOutput)
+    internal static async Task ExportSpaces(string exploreCookie, string filePath, string exportFileName, string names, bool? verboseOutput)
     {
         var httpClient = new HttpClient
         {
@@ -252,17 +261,53 @@ internal class Program
                 return;
             }
 
+            var namesList = names?.Split(',')
+                .Select(name => name.Trim())
+                .ToList();
             var spaces = await spacesResponse.Content.ReadFromJsonAsync<PagedSpaces>();
             var panel = new Panel($"You have [green]{spaces!.Embedded!.Spaces!.Count} spaces[/] in explore");
             panel.Width = 100;
             panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();
+
+            // validate the file name if provided
+            if (string.IsNullOrEmpty(exportFileName))
+            {
+                // use default if not provided
+                exportFileName = "ExploreSpaces.json";
+            }
+            else if (!UtilityHelper.IsValidFileName(ref exportFileName))
+            {
+                return; // file name is invalid, exit
+            }
+
+            // validate the export path if provided
+            // string filePath;
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // use default (current directory) if not provided
+                filePath = Path.Combine(Environment.CurrentDirectory, exportFileName);
+            }
+            else if (!UtilityHelper.IsValidFilePath(ref filePath))
+            {
+                return; // file path is invalid, exit
+            }
+
+            // combine the path and filename
+            filePath = Path.Combine(filePath, exportFileName);
+
             AnsiConsole.Write(panel);
+            Console.WriteLine(namesList?.Count > 0 ? $"Exporting spaces: {string.Join(", ", namesList)}" : "Exporting all spaces");
             Console.WriteLine("processing...");
 
             var spacesToExport = new List<ExploreSpace>();
 
             foreach (var space in spaces.Embedded.Spaces)
             {
+                if (namesList?.Count > 0 && space.Name != null && !namesList.Contains(space.Name))
+                {
+                    continue;
+                }
+
                 var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{space.Name}[/]"), Width = 100, UseSafeBorder = true };
                 resultTable.AddColumn("Result");
                 resultTable.AddColumn(new TableColumn("Details").Centered());
@@ -348,13 +393,25 @@ internal class Program
                 ExploreSpaces = spacesToExport
             };
 
+
             // export the file
             string exploreSpacesJson = JsonSerializer.Serialize(export);
-            var filePath = Path.Combine(Environment.CurrentDirectory, "ExploreSpaces.json");
-
-            using (StreamWriter streamWriter = new StreamWriter(filePath))
+            try
             {
-                streamWriter.Write(exploreSpacesJson);
+                using (StreamWriter streamWriter = new StreamWriter(filePath))
+                {
+                    streamWriter.Write(exploreSpacesJson);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
+                return;
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
+                return;
             }
 
             AnsiConsole.MarkupLine($"[green] All done! {spacesToExport.Count()} of {spaces!.Embedded!.Spaces!.Count} spaces exported to: {filePath} [/]");
