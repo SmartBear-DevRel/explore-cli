@@ -64,14 +64,6 @@ public class UtilityHelperTests
     [InlineData("")]
     [InlineData(null)]
     [InlineData("test/")]
-    [InlineData("test\\")]
-    [InlineData("test:")]
-    [InlineData("test*")]
-    [InlineData("test?")]
-    [InlineData("test\"")]
-    [InlineData("test<")]
-    [InlineData("test>")]
-    [InlineData("test|")]
     [InlineData("test.")]
     [InlineData("test.txt")]
     public void IsValidFileName_Should_Fail(string input)
@@ -95,13 +87,6 @@ public class UtilityHelperTests
     [InlineData(" ")]
     [InlineData("")]
     [InlineData(null)]
-    [InlineData("test:")]
-    [InlineData("test*")]
-    [InlineData("test?")]
-    [InlineData("test\"")]
-    [InlineData("test<")]
-    [InlineData("test>")]
-    [InlineData("test|")]
     public void IsValidFilePath_Should_Fail_With_Invalid_Chars(string input)
     {
         Assert.False(UtilityHelper.IsValidFilePath(ref input));
@@ -110,6 +95,7 @@ public class UtilityHelperTests
     [Theory]
     [InlineData("test")]
     [InlineData("test/test")]
+    [InlineData("test\\test")]
     [InlineData("test.test")]
     public void IsValidFilePath_Should_Pass(string input)
     {

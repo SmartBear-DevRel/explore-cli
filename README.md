@@ -78,7 +78,8 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
 **Command Options**:
 
- ``` _____                  _                              ____   _   _
+```
+  _____                  _                              ____   _   _
  | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
  |  _|   \ \/ / | '_ \  | |  / _ \  | '__|  / _ \     | |     | | | |
  | |___   >  <  | |_) | | | | (_) | | |    |  __/  _  | |___  | | | |
@@ -130,12 +131,17 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
   > Explore.CLI export-spaces [options]
 
 **Options:**
-  > -ec, --explore-cookie <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
-  > -fp, --file-path <file-path>                       The path to the directory used for exporting data. It can be either relative or absolute
-  > -en, --export-name <export-name>                   The name of the exported file
-  > -n, --names <names>                                A comma-separated list of space names to export
-  > -v, --verbose                                      Include verbose output during processing
-  > -?, -h, --help                                     Show help and usage information
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+
+  > `-fp`, `--file-path` <file-path>                       The path to the directory used for exporting data. It can be either relative or absolute
+
+  > `-en`, `--export-name` <export-name>                   The name of the exported file
+
+  > `-n`, `--names` <names>                                A comma-separated list of space names to export
+
+  > `-v`, `--verbose`                                      Include verbose output during processing
+
+  > `-?`, `-h`, `--help`                                     Show help and usage information
 
 **Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
@@ -161,10 +167,13 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
   > Explore.CLI import-spaces [options]
 
 **Options:**
-  > -ec, --explore-cookie <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
-  > -fp, --file-path <file-path> (REQUIRED)            The path to the file used for importing data
-  > -v, --verbose                                      Include verbose output during processing
-  > -?, -h, --help                                     Show help and usage information
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+
+  > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the file used for importing data
+
+  > `-v`, `--verbose`                                      Include verbose output during processing
+
+  > `-?`, `-h`, `--help`                                     Show help and usage information
 
 **Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
