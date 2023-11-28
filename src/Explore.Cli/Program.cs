@@ -305,6 +305,7 @@ internal class Program
             {
                 if (namesList?.Count > 0 && space.Name != null && !namesList.Contains(space.Name))
                 {
+                    AnsiConsole.MarkupLine($"[orange3]'Skipped {space.Name}': Name not found in list of names to export[/]");
                     continue;
                 }
 
@@ -384,6 +385,12 @@ internal class Program
                 {
                     AnsiConsole.Write(resultTable);
                 }
+            }
+
+            if (spacesToExport.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[orange3]No spaces matched the name[/]");
+                return;
             }
 
             // construct the export object
