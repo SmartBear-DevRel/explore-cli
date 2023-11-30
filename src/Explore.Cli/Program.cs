@@ -1,7 +1,6 @@
 ﻿using System.CommandLine;
 using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Explore.Cli.Models;
@@ -33,7 +32,7 @@ internal class Program
         var exportFileName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
         exportFileName.AddAlias("-en");
 
-        var names = new Option<string>(name: "--names", description: "The names of the spaces to export") { IsRequired = false };
+        var names = new Option<string>(name: "--names", description: "The names of the spaces to export or export") { IsRequired = false };
         names.AddAlias("-n");
 
         var verbose = new Option<bool?>(name: "--verbose", description: "Include verbose output during processing") { IsRequired = false };
@@ -61,12 +60,12 @@ internal class Program
         exportSpacesCommand.SetHandler(async (ec, fp, en, n, v) =>
         { await ExportSpaces(ec, fp, en, n, v); }, exploreCookie, exportFilePath, exportFileName, names, verbose);
 
-        var importSpacesCommand = new Command("import-spaces") { exploreCookie, importFilePath, verbose };
+        var importSpacesCommand = new Command("import-spaces") { exploreCookie, importFilePath, names, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
         rootCommand.Add(importSpacesCommand);
 
-        importSpacesCommand.SetHandler(async (ec, fp, v) =>
-        { await ImportSpaces(ec, fp, v); }, exploreCookie, importFilePath, verbose);
+        importSpacesCommand.SetHandler(async (ec, fp, v, n) =>
+        { await ImportSpaces(ec, fp, v, n); }, exploreCookie, importFilePath, names, verbose);
 
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
@@ -405,10 +404,8 @@ internal class Program
             string exploreSpacesJson = JsonSerializer.Serialize(export);
             try
             {
-                using (StreamWriter streamWriter = new StreamWriter(filePath))
-                {
-                    streamWriter.Write(exploreSpacesJson);
-                }
+                using StreamWriter streamWriter = new StreamWriter(filePath);
+                streamWriter.Write(exploreSpacesJson);
             }
             catch (UnauthorizedAccessException)
             {
@@ -425,23 +422,21 @@ internal class Program
         }
     }
 
-    internal static async Task ImportSpaces(string exploreCookie, string filePath, bool? verboseOutput)
+    internal static async Task ImportSpaces(string exploreCookie, string filePath, string names, bool? verboseOutput)
     {
         //check file existence and read permissions
         try
         {
-            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read);
+            //let's verify it's a JSON file now
+            if (!UtilityHelper.IsJsonFile(filePath))
             {
-                //let's verify it's a JSON file now
-                if (!UtilityHelper.IsJsonFile(filePath))
-                {
-                    AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
-                    return;
-                }
-
-                // You can read from the file if this point is reached
-                AnsiConsole.MarkupLine($"processing ...");
+                AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
+                return;
             }
+
+            // You can read from the file if this point is reached
+            AnsiConsole.MarkupLine($"processing ...");
         }
         catch (UnauthorizedAccessException)
         {
@@ -459,6 +454,9 @@ internal class Program
             return;
         }
 
+        var namesList = names?.Split(',')
+                        .Select(name => name.Trim())
+                        .ToList();
 
         //Read and serialize
         try
@@ -469,10 +467,9 @@ internal class Program
             //validate json against known (high level) schema
             var validationResult = await UtilityHelper.ValidateSchema(json, "ExploreSpaces.schema.json");
 
-
             if (!validationResult.isValid)
             {
-                Console.WriteLine($"The provide json does not conform to the expected schema. Errors: {validationResult.Message}");
+                Console.WriteLine($"The provided JSON does not conform to the expected schema. Errors: {validationResult.Message}");
                 return;
             }
 
@@ -487,6 +484,13 @@ internal class Program
             {
                 foreach (var exportedSpace in exportedSpaces.ExploreSpaces)
                 {
+                    // check if the space name is in the list of names to import
+                    if (namesList?.Count > 0 && exportedSpace.Name != null && !namesList.Contains(exportedSpace.Name))
+                    {
+                        AnsiConsole.MarkupLine($"[orange3]'Skipped {exportedSpace.Name}': Name not found in list of names to import[/]");
+                        continue;
+                    }
+
                     var spaceExists = await CheckSpaceExists(exploreCookie, exportedSpace.Id?.ToString(), verboseOutput);
 
                     var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{exportedSpace.Name}[/]"), Width = 100, UseSafeBorder = true };
