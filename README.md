@@ -22,8 +22,6 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 >  `-?`, `-h`, `--help`  Show help and usage information
 
 **Commands:**
->  `import-inspector-collections`  Import Swagger Inspector collections into SwaggerHub Explore
->
 >  `export-spaces`                 Export SwaggerHub Explore spaces to filesystem
 >
 >  `import-spaces`                 Import SwaggerHub Explore spaces from a file
@@ -33,7 +31,6 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 You will need the following:
 - .NET 7.0 (or above). Follow instructions for [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net70), [Linux](https://learn.microsoft.com/en-us/dotnet/core/install/linux), or [MacOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
 - A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required).
-- If you want to import data from the legacy Swagger Inspector tool, the you'll also need a Swagger Inspector account, register by clicking the `Sign Up` button at https://inspector.swagger.io/builder (if required).
 
 ### Install the CLI
 
@@ -43,9 +40,7 @@ Download and install the CLI tool from Nuget: https://www.nuget.org/packages/Exp
 
 ### Session Cookies for CLI command
 
-You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands. For the `import-inspector-collections` CLI command, you will also need to obtain a cookie from an active Swagger Inspector session.
-
-From Swagger Inspector, navigate to your browser development tools, locate the application cookies and extract the `inspector-token` cookie.
+You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands.
 
 From SwaggerHub Explore, navigate to your browser development tools, locate the application cookies and extract the `SESSION` and `XSRF-TOKEN` cookies.
 
@@ -73,45 +68,6 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
 **Safari**
 > Develop `>` Show Web Inspector. If you can't see the Develop menu, go to Safari `>` Preferences `>` Advanced, and check the Show Develop menu in menu bar checkbox.
-
-### Running the `import-inspector-collections` command
-
-**Command Options**:
-
-```
-  _____                  _                              ____   _   _
- | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
- |  _|   \ \/ / | '_ \  | |  / _ \  | '__|  / _ \     | |     | | | |
- | |___   >  <  | |_) | | | | (_) | | |    |  __/  _  | |___  | | | |
- |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
-                |_|
-```
-
-**Description:**
-  > Import Swagger Inspector collections into SwaggerHub Explore
-
-**Usage:**
-  > `Explore.CLI import-inspector-collections [options]`
-
-**Options:**
-
-
-  > `-u`, `--username` <username> (REQUIRED)                   Username from Swagger Inspector.
-  
-  > `-ic`, `--inspector-cookie` <inspector-cookie> (REQUIRED)  A valid and active Swagger Inspector session cookie associated with provided username
-  
-  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)      A valid and active SwaggerHub Explore session cookie
-  
-  > `-?`, `-h`, `--help`                                         Show help and usage information
-
-
-**Note** - the format for inspector cookie is as follows: `"cookie-name=cookie-value"`
-
-> Example `"inspector-token=34c5921e-fdf8-4531-8d7a-ed2940076444"`
-
-**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
-
->Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
 ### Running the `export-spaces` command
 
@@ -170,6 +126,8 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
   > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
 
   > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the file used for importing data
+
+  > `-n`, `--names` <names>                                A comma-separated list of space names to import
 
   > `-v`, `--verbose`                                      Include verbose output during processing
 
