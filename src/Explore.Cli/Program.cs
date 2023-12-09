@@ -26,7 +26,7 @@ internal class Program
         var exportFileName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
         exportFileName.AddAlias("-en");
 
-        var names = new Option<string>(name: "--names", description: "The names of the spaces to export or export") { IsRequired = false };
+        var names = new Option<string>(name: "--names", description: "The names of the spaces to export or import") { IsRequired = false };
         names.AddAlias("-n");
 
         var verbose = new Option<bool?>(name: "--verbose", description: "Include verbose output during processing") { IsRequired = false };
