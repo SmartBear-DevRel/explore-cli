@@ -73,6 +73,17 @@ internal class Program
         return await rootCommand.InvokeAsync(args);
     }
 
+    //internal static async Task ImportPostmanCollection(string exploreCookie, string filePath, bool? verboseOutput)
+    //{
+        //validate file is JSON file
+
+        //validate collection against postman collection schema
+
+        //iterate over the items and import
+
+        //deal with scenario of item-groups
+    //}
+
     internal static async Task ImportFromInspector(string inspectorUsername, string inspectorCookie, string exploreCookie)
     {
 

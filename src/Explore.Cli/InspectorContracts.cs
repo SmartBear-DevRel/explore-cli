@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-
-using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Globalization;
 
 public class InspectorCollection
 {
@@ -52,7 +47,7 @@ public class CollectionEntry
     public string? Authentication { get; set; }
 
     [JsonPropertyName("headers")]
-    public List<Header>? Headers { get; set; }
+    public List<InspectorHeader>? Headers { get; set; }
 
     [JsonPropertyName("type")]
     public string? Type { get; set; }
@@ -70,7 +65,7 @@ public class CollectionEntry
     public string? Name { get; set; }
 }
 
-public class Header
+public class InspectorHeader
 {
     [JsonPropertyName("modelClass")]
     public string? ModelClass { get; set; }

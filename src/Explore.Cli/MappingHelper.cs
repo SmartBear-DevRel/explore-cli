@@ -201,6 +201,7 @@ public static class MappingHelper
 
         return null;
     }
+
     public static Dictionary<string, object> CreatePathsDictionary(CollectionEntry entry)
     {        
             if(entry.Uri != null)
