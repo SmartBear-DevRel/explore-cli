@@ -5,13 +5,13 @@ using System.Text.Json.Serialization;
 public class PostmanCollection
 {
     [JsonPropertyName("info")]
-    public Info? Info { get; set; }
+    public PostmanCollectionInfo? Info { get; set; }
 
     [JsonPropertyName("item")]
     public List<Item>? Item { get; set; }
 }
 
-public partial class Info
+public partial class PostmanCollectionInfo
 {
     [JsonPropertyName("_postman_id")]
     public string? PostmanId { get; set; }
@@ -21,6 +21,12 @@ public partial class Info
 
     [JsonPropertyName("schema")]
     public string? Schema { get; set; }
+
+    [JsonPropertyName("version")]
+    public string? Version { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
 }
 
 public class Item
