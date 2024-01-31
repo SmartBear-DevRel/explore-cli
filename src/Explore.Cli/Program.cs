@@ -168,44 +168,56 @@ internal class Program
 
                     //parse the response
                     var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
+
+                    //Postman Items cant contain nested items, so we can flatten the list
+                    var flattenedItems = PostmanCollectionMappingHelper.FlattenItems(postmanCollection.Item);
                     
-                    foreach(var item in postmanCollection.Item)
+                    foreach(var item in flattenedItems)
                     {
-                        //now let's create an API entry in the space
-                        var cleanedAPIName = UtilityHelper.CleanString(item.Name);
-                        var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
-
-                        exploreHttpClient.DefaultRequestHeaders.Clear();
-                        exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                        exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                        var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
-
-                        if (apiResponse.StatusCode == HttpStatusCode.Created)
+                        if(item.Request != null)
                         {
-                            var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
-                            var connectionRequestBody = JsonSerializer.Serialize(PostmanCollectionMappingHelper.MapPostmanCollectionItemToExploreConnection(item));
-                            var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
+                            //check if request format is supported
+                            if(!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
+                            {
+                                apiImportResults.AddRow("[orange3]skipped[/]", $"Item '{item.Name}' skipped", $"Request method not supported");
+                                continue;
+                            }
+                            
+                            //now let's create an API entry in the space
+                            var cleanedAPIName = UtilityHelper.CleanString(item.Name);
+                            var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
 
-                            //now let's do the work and import the connection
                             exploreHttpClient.DefaultRequestHeaders.Clear();
                             exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
                             exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                            var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+                            var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
 
-                            if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                            if (apiResponse.StatusCode == HttpStatusCode.Created)
                             {
-                                apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
+                                var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
+                                var connectionRequestBody = JsonSerializer.Serialize(PostmanCollectionMappingHelper.MapPostmanCollectionItemToExploreConnection(item));
+                                var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
+
+                                //now let's do the work and import the connection
+                                exploreHttpClient.DefaultRequestHeaders.Clear();
+                                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                                var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+
+                                if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                                {
+                                    apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
+                                }
+                                else
+                                {
+                                    apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
+                                }
                             }
                             else
                             {
-                                apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
-                            }
+                                apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+                            }   
                         }
-                        else
-                        {
-                            apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
-                        }
-                      
                     }
 
 
@@ -725,7 +737,10 @@ internal class Program
 
                                     }
                                 }
-                                apiImportResults.AddRow("[orange3]skipped[/]", $"API '{exportedAPI.Name}' skipped", $"Kafka not yet supported by export");
+                                else
+                                {
+                                    apiImportResults.AddRow("[orange3]skipped[/]", $"API '{exportedAPI.Name}' skipped", $"Kafka not yet supported by export");
+                                }                                
                             }
                         }
 

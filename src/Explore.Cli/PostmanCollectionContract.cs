@@ -46,8 +46,6 @@ public class Item
     [JsonPropertyName("item")]
     public List<Item>? ItemList { get; set; }
 
-    //[JsonPropertyName("event")]
-    //public Event[]? Event { get; set; }
 }
 
 public class Request

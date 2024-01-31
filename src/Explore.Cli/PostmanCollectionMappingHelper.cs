@@ -1,8 +1,9 @@
+using System.Net.NetworkInformation;
 using Explore.Cli.Models;
 
 public static class PostmanCollectionMappingHelper
 {
-       public static Connection MapPostmanCollectionItemToExploreConnection(Item postmanCollectionItem)
+   public static Connection MapPostmanCollectionItemToExploreConnection(Item postmanCollectionItem)
    {
         return new Connection()
         {
@@ -73,6 +74,27 @@ public static class PostmanCollectionMappingHelper
             }
         }
 
+        // if we have urlencoded body then force the content type header as plaintext (Explore doesn't support urlencoded natively)
+        if(request?.Body != null && request.Body.Mode != null && request.Body.Mode.Equals("urlencoded", StringComparison.OrdinalIgnoreCase))
+        {
+            parameters.Add(new Parameter()
+            {
+                In = "header",
+                Name = "Content-Type",
+                Schema = new Schema()
+                {
+                    type = "string"
+                },
+                Examples = new Examples()
+                {
+                    Example = new Example()
+                    {
+                        Value = "application/x-www-form-urlencoded"
+                    }
+                }
+            });
+        }
+
         // parse and map the query string
         if(request?.Url != null)
         {
@@ -110,22 +132,42 @@ public static class PostmanCollectionMappingHelper
             };
 
             //add request body
-            if(request.Body != null && request.Body.Raw != null)
+            if(request.Body != null)
             {
-                var examplesJson = new Dictionary<string, object>
+                if(request.Body.Raw != null)
                 {
-                    { "examples", MapEntryBodyToContentExamples(request.Body.Raw) }
-                };
+                    var examplesJson = new Dictionary<string, object>
+                    {
+                        { "examples", MapEntryBodyToContentExamples(request.Body.Raw) }
+                    };
 
-                var contentJson = new Dictionary<string, object>
-                {
-                    { "*/*", examplesJson }
-                };
+                    var contentJson = new Dictionary<string, object>
+                    {
+                        { "*/*", examplesJson }
+                    };
 
-                pathsContent.RequestBody = new RequestBody()
+                    pathsContent.RequestBody = new RequestBody()
+                    {
+                        Content = contentJson
+                    };
+                }
+                else if(request.Body.Urlencoded != null)
                 {
-                    Content = contentJson
-                };
+                    var examplesJson = new Dictionary<string, object>
+                    {
+                        { "examples", MapUrlEncodedBodyToContentExamples(request.Body.Urlencoded) }
+                    };
+
+                    var contentJson = new Dictionary<string, object>
+                    {
+                        { "application/x-www-form-urlencoded", examplesJson }
+                    };
+
+                    pathsContent.RequestBody = new RequestBody()
+                    {
+                        Content = contentJson
+                    };
+                }
             }
 
             // add header and query params
@@ -157,5 +199,66 @@ public static class PostmanCollectionMappingHelper
                 Value = rawBody
             }
         };        
+    }
+
+    public static Examples MapUrlEncodedBodyToContentExamples(List<Urlencoded>? urlEncodedBody)
+    {
+        var rawBody = string.Empty;
+
+        if(urlEncodedBody != null)
+        {
+            foreach(var param in urlEncodedBody)
+            {
+                rawBody += $"{param.Key}={param.Value}&";
+            }
+        }
+
+        return new Examples()
+        {
+            Example = new Example()
+            {
+                Value = rawBody
+            }
+        };        
+    }
+    
+    public static List<Item> FlattenItems(List<Item> items)
+    {
+        var result = new List<Item>();
+
+        foreach (var item in items)
+        {
+            // Add the current item to the list if it has request data
+            if(item.Request != null)
+            {
+                result.Add(item);
+            }            
+
+            // If the item has nested items, flatten each one and add it to the list
+            if (item.ItemList != null)
+            {
+                result.AddRange(FlattenItems(item.ItemList));
+            }
+        }
+
+        return result;
+    }
+
+    public static bool IsItemRequestModeSupported(Request request)
+    {
+        if(request.Body != null && request.Body.Mode != null && request.Url != null && request.Url.Protocol != null)
+        {
+            // if the request body mode is not raw or urlencoded and the protocol is not http or https, return false
+            if(!(request.Body.Mode.Equals("raw", StringComparison.OrdinalIgnoreCase) || request.Body.Mode.Equals("urlencoded", StringComparison.OrdinalIgnoreCase) || request.Body.Mode.Equals("formdata", StringComparison.OrdinalIgnoreCase)) && request.Url.Protocol.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        return true;
     }
 }

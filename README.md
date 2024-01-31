@@ -27,6 +27,8 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 >  `export-spaces`                 Export SwaggerHub Explore spaces to filesystem
 >
 >  `import-spaces`                 Import SwaggerHub Explore spaces from a file
+>
+>  `import-postman-collection`     Import Postman Collection from a file into SwaggerHub Explore
 
 
 ### Prerequisites
@@ -180,6 +182,42 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
 > Please note - the current `import-spaces` does not support importing KAFKA APIs
+
+### Running the `import-postman-collection` command
+
+**Command Options**
+```
+  _____                  _                              ____   _   _
+ | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
+ |  _|   \ \/ / | '_ \  | |  / _ \  | '__|  / _ \     | |     | | | |
+ | |___   >  <  | |_) | | | | (_) | | |    |  __/  _  | |___  | | | |
+ |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
+                |_|
+```
+**Description:**
+  > Import SwaggerHub Explore spaces from a file
+
+**Usage:**
+  > Explore.CLI import-spaces [options]
+
+**Options:**
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+
+  > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the file used for importing data
+
+  > `-v`, `--verbose`                                      Include verbose output during processing
+
+  > `-?`, `-h`, `--help`                                     Show help and usage information
+
+**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+
+>Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
+
+> **Notes:**
+> - Compatible with Postman Collections v2.1
+> - Nested collections get flattened into a single Explore space
+> - GraphQL collections/requests not supported
+> - Environments, Authorization data (not including explicit headers), Pre-request Scripts, Tests are not included in import
 
 ## More Information on SwaggerHub Explore
       
