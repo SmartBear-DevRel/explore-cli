@@ -33,7 +33,6 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 You will need the following:
 - .NET 7.0 (or above). Follow instructions for [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net70), [Linux](https://learn.microsoft.com/en-us/dotnet/core/install/linux), or [MacOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
 - A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required).
-- If you want to import data from the legacy Swagger Inspector tool, the you'll also need a Swagger Inspector account, register by clicking the `Sign Up` button at https://inspector.swagger.io/builder (if required).
 
 ### Install the CLI
 
@@ -43,9 +42,7 @@ Download and install the CLI tool from Nuget: https://www.nuget.org/packages/Exp
 
 ### Session Cookies for CLI command
 
-You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands. For the `import-inspector-collections` CLI command, you will also need to obtain a cookie from an active Swagger Inspector session.
-
-From Swagger Inspector, navigate to your browser development tools, locate the application cookies and extract the `inspector-token` cookie.
+You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands.
 
 From SwaggerHub Explore, navigate to your browser development tools, locate the application cookies and extract the `SESSION` and `XSRF-TOKEN` cookies.
 
@@ -131,6 +128,8 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
   > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
 
   > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the file used for importing data
+
+  > `-n`, `--names` <names>                                A comma-separated list of space names to import
 
   > `-v`, `--verbose`                                      Include verbose output during processing
 

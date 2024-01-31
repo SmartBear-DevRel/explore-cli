@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -10,6 +10,7 @@ internal class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        import-postman-collection
         var rootCommand = new RootCommand
         {
             Name = "Explore.CLI",
@@ -28,7 +29,7 @@ internal class Program
         var exportFileName = new Option<string>(name: "--export-name", description: "The name of the file to export") { IsRequired = false };
         exportFileName.AddAlias("-en");
 
-        var names = new Option<string>(name: "--names", description: "The names of the spaces to export") { IsRequired = false };
+        var names = new Option<string>(name: "--names", description: "The names of the spaces to export or import") { IsRequired = false };
         names.AddAlias("-n");
 
         var verbose = new Option<bool?>(name: "--verbose", description: "Include verbose output during processing") { IsRequired = false };
@@ -41,12 +42,12 @@ internal class Program
         exportSpacesCommand.SetHandler(async (ec, fp, en, n, v) =>
         { await ExportSpaces(ec, fp, en, n, v); }, exploreCookie, exportFilePath, exportFileName, names, verbose);
 
-        var importSpacesCommand = new Command("import-spaces") { exploreCookie, importFilePath, verbose };
+        var importSpacesCommand = new Command("import-spaces") { exploreCookie, importFilePath, names, verbose };
         importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
         rootCommand.Add(importSpacesCommand);
 
-        importSpacesCommand.SetHandler(async (ec, fp, v) =>
-        { await ImportSpaces(ec, fp, v); }, exploreCookie, importFilePath, verbose);
+        importSpacesCommand.SetHandler(async (ec, fp, v, n) =>
+        { await ImportSpaces(ec, fp, v, n); }, exploreCookie, importFilePath, names, verbose);
 
         var importPostmanCollectionCommand = new Command("import-postman-collection") { exploreCookie, importFilePath, verbose };
         importPostmanCollectionCommand.Description = "Import a Postman collection into SwaggerHub Explore";
@@ -328,6 +329,7 @@ internal class Program
             {
                 if (namesList?.Count > 0 && space.Name != null && !namesList.Contains(space.Name))
                 {
+                    AnsiConsole.MarkupLine($"[orange3]'Skipped {space.Name}': Name not found in list of names to export[/]");
                     continue;
                 }
 
@@ -409,6 +411,12 @@ internal class Program
                 }
             }
 
+            if (spacesToExport.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[orange3]No spaces matched the provided names[/]");
+                return;
+            }
+
             // construct the export object
             var export = new ExportSpaces()
             {
@@ -416,15 +424,12 @@ internal class Program
                 ExploreSpaces = spacesToExport
             };
 
-
             // export the file
             string exploreSpacesJson = JsonSerializer.Serialize(export);
             try
             {
-                using (StreamWriter streamWriter = new StreamWriter(filePath))
-                {
-                    streamWriter.Write(exploreSpacesJson);
-                }
+                using StreamWriter streamWriter = new StreamWriter(filePath);
+                streamWriter.Write(exploreSpacesJson);
             }
             catch (UnauthorizedAccessException)
             {
@@ -441,23 +446,21 @@ internal class Program
         }
     }
 
-    internal static async Task ImportSpaces(string exploreCookie, string filePath, bool? verboseOutput)
+    internal static async Task ImportSpaces(string exploreCookie, string filePath, string names, bool? verboseOutput)
     {
         //check file existence and read permissions
         try
         {
-            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read);
+            //let's verify it's a JSON file now
+            if (!UtilityHelper.IsJsonFile(filePath))
             {
-                //let's verify it's a JSON file now
-                if (!UtilityHelper.IsJsonFile(filePath))
-                {
-                    AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
-                    return;
-                }
-
-                // You can read from the file if this point is reached
-                AnsiConsole.MarkupLine($"processing ...");
+                AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
+                return;
             }
+
+            // You can read from the file if this point is reached
+            AnsiConsole.MarkupLine($"processing ...");
         }
         catch (UnauthorizedAccessException)
         {
@@ -475,6 +478,9 @@ internal class Program
             return;
         }
 
+        var namesList = names?.Split(',')
+                        .Select(name => name.Trim())
+                        .ToList();
 
         //Read and serialize
         try
@@ -485,10 +491,9 @@ internal class Program
             //validate json against known (high level) schema
             var validationResult = await UtilityHelper.ValidateSchema(json, "explore");
 
-
             if (!validationResult.isValid)
             {
-                Console.WriteLine($"The provide json does not conform to the expected schema. Errors: {validationResult.Message}");
+                Console.WriteLine($"The provided JSON does not conform to the expected schema. Errors: {validationResult.Message}");
                 return;
             }
 
@@ -505,12 +510,18 @@ internal class Program
             {
                 foreach (var exportedSpace in exportedSpaces.ExploreSpaces)
                 {
+                    // check if the space name is in the list of names to import
+                    if (namesList?.Count > 0 && exportedSpace.Name != null && !namesList.Contains(exportedSpace.Name))
+                    {
+                        AnsiConsole.MarkupLine($"[orange3]'Skipped {exportedSpace.Name}': Name not found in list of names to import[/]");
+                        continue;
+                    }
+
                     var spaceExists = await CheckSpaceExists(exploreCookie, exportedSpace.Id?.ToString(), verboseOutput);
 
                     var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{exportedSpace.Name}[/]"), Width = 100, UseSafeBorder = true };
                     resultTable.AddColumn("Result");
                     resultTable.AddColumn(new TableColumn("Details").Centered());
-
 
                     var importedSpace = await UpsertSpace(exploreCookie, spaceExists, exportedSpace.Name, exportedSpace.Id.ToString());
 
@@ -547,7 +558,6 @@ internal class Program
                                                 }
                                             }
                                         }
-
                                     }
                                 }
                                 else
@@ -569,7 +579,6 @@ internal class Program
                     {
                         AnsiConsole.Write(resultTable);
                     }
-
                 }
             }
 
@@ -587,10 +596,8 @@ internal class Program
         }
     }
 
-
     private static async Task<bool> CheckSpaceExists(string exploreCookie, string? id, bool? verboseOutput)
     {
-
         if (string.IsNullOrEmpty(id))
         {
             return false;
@@ -617,7 +624,6 @@ internal class Program
             return true;
         }
 
-
         if (verboseOutput != null && verboseOutput == true)
         {
             AnsiConsole.MarkupLine($"[orange3]StatusCode {spacesResponse.StatusCode} returned from the GetSpaceById API. New space will be created[/]");
@@ -628,7 +634,6 @@ internal class Program
 
     private static async Task<bool> CheckApiExists(string exploreCookie, string spaceId, string? id, bool? verboseOutput)
     {
-
         if (string.IsNullOrEmpty(id))
         {
             return false;
@@ -659,7 +664,6 @@ internal class Program
 
     private static async Task<bool> CheckConnectionExists(string exploreCookie, string spaceId, string apiId, string? id, bool? verboseOutput)
     {
-
         if (string.IsNullOrEmpty(id))
         {
             return false;
@@ -687,7 +691,6 @@ internal class Program
 
         return false;
     }
-
 
     private static async Task<SpaceResponse> UpsertSpace(string exploreCookie, bool spaceExists, string? name, string? id)
     {
@@ -721,7 +724,6 @@ internal class Program
                 // swallow 409 as server is being overly strict
                 return new SpaceResponse() { Id = Guid.Parse(id), Name = name };
             }
-
         }
 
         if (spacesResponse.IsSuccessStatusCode)
@@ -740,8 +742,6 @@ internal class Program
 
         return new SpaceResponse();
     }
-
-
 
     private static async Task<ApiResponse> UpsertApi(string exploreCookie, bool spaceExists, string spaceId, string? id, string? name, string? type, bool? verboseOutput)
     {
@@ -807,7 +807,6 @@ internal class Program
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
-
         var connectionContent = new StringContent(JsonSerializer.Serialize(MappingHelper.MassageConnectionExportForImport(connection)), Encoding.UTF8, "application/json");
 
         HttpResponseMessage? connectionResponse;
@@ -838,18 +837,7 @@ internal class Program
                 var message = await connectionResponse.Content.ReadAsStringAsync();
                 AnsiConsole.WriteLine($"error: {message}");
             }
-
         }
-
         return false;
     }
 }
-
-
-
-
-
-
-
-
-
