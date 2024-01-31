@@ -10,7 +10,6 @@ internal class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        import-postman-collection
         var rootCommand = new RootCommand
         {
             Name = "Explore.CLI",
