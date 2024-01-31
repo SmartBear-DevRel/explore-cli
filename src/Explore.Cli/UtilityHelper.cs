@@ -1463,4 +1463,11 @@ public static class UtilityHelper
         }
         return true;
     }
+
+    public static string? ExtractXSRFTokenFromCookie(string sessionCookie)
+    {
+        var cookieComponents = sessionCookie.Split(";");
+        var xsrfComponent = cookieComponents.FirstOrDefault(x => x.Trim().ToUpperInvariant().StartsWith("XSRF-TOKEN"));
+        return xsrfComponent?.Split("=")[1];
+    }
 }
