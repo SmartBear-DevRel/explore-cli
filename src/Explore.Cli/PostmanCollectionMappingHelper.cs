@@ -1,5 +1,7 @@
 using System.Net.NetworkInformation;
+using System.Text.Json;
 using Explore.Cli.Models;
+using Namotion.Reflection;
 
 public static class PostmanCollectionMappingHelper
 {
@@ -260,5 +262,32 @@ public static class PostmanCollectionMappingHelper
         }
 
         return true;
+    }
+
+    public static bool IsCollectionVersion2_1(string json)
+    {
+        var jsonObject = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+
+        if(jsonObject != null && jsonObject.ContainsKey("info"))
+        {
+            
+            var info = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonObject["info"].ToString() ?? string.Empty);
+            
+
+            if(info != null && info.ContainsKey("schema"))
+            {
+                if(info["schema"] != null && info["schema"].ToString() != null)
+                {
+                    var schema = info["schema"].ToString();
+                    if(string.Equals(schema, "https://schema.getpostman.com/json/collection/v2.1.0/collection.json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                
+            }
+        }
+
+        return false;
     }
 }

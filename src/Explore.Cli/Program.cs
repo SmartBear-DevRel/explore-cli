@@ -49,7 +49,7 @@ internal class Program
         { await ImportSpaces(ec, fp, v, n); }, exploreCookie, importFilePath, names, verbose);
 
         var importPostmanCollectionCommand = new Command("import-postman-collection") { exploreCookie, importFilePath, verbose };
-        importPostmanCollectionCommand.Description = "Import a Postman collection into SwaggerHub Explore";
+        importPostmanCollectionCommand.Description = "Import a Postman collection v2.1 into SwaggerHub Explore";
         rootCommand.Add(importPostmanCollectionCommand);
 
         importPostmanCollectionCommand.SetHandler(async (ec, fp, v) =>
@@ -98,6 +98,13 @@ internal class Program
         {
             //validate collection against postman collection schema
             string json = File.ReadAllText(filePath);
+
+            if(!PostmanCollectionMappingHelper.IsCollectionVersion2_1(json))
+            {
+                Console.WriteLine($"The provided JSON does not conform to the expected schema. Errors: Only Postman Collection v2.1 are supported at this time.");
+                return;
+            }
+
             var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(json);
 
             //validate json against known (high level) schema
