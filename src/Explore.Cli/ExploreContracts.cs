@@ -180,11 +180,21 @@ public class Parameter
     [JsonPropertyName("name")]
     public string? Name { get; set; }    
 
+    [JsonPropertyName("schema")]
+    public Schema? Schema { get; set; }
+
     [JsonPropertyName("examples")]
     public Examples? Examples { get; set; }
 
 
 }
+
+public class Schema
+{
+    [JsonPropertyName("type")]
+    public string? type { get; set; }
+}
+
 
 public class Examples
 {

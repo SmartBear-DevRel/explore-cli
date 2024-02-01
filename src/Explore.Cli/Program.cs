@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -10,9 +10,11 @@ internal class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        var rootCommand = new RootCommand();
-        rootCommand.Name = "Explore.CLI";
-        rootCommand.Description = "Simple utility CLI for importing data into and out of SwaggerHub Explore";
+        var rootCommand = new RootCommand
+        {
+            Name = "Explore.CLI",
+            Description = "Simple utility CLI for importing data into and out of SwaggerHub Explore"
+        };
 
         var exploreCookie = new Option<string>(name: "--explore-cookie", description: "A valid and active SwaggerHub Explore session cookie") { IsRequired = true };
         exploreCookie.AddAlias("-ec");
@@ -46,9 +48,225 @@ internal class Program
         importSpacesCommand.SetHandler(async (ec, fp, v, n) =>
         { await ImportSpaces(ec, fp, v, n); }, exploreCookie, importFilePath, names, verbose);
 
+        var importPostmanCollectionCommand = new Command("import-postman-collection") { exploreCookie, importFilePath, verbose };
+        importPostmanCollectionCommand.Description = "Import a Postman collection v2.1 into SwaggerHub Explore";
+        rootCommand.Add(importPostmanCollectionCommand);
+
+        importPostmanCollectionCommand.SetHandler(async (ec, fp, v) =>
+        { await ImportPostmanCollection(ec, fp, v); }, exploreCookie, importFilePath, verbose);
+        
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
         return await rootCommand.InvokeAsync(args);
+    }
+
+    internal static async Task ImportPostmanCollection(string exploreCookie, string filePath, bool? verboseOutput)
+    {
+        //check file existence and read permissions
+        try
+        {
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                //let's verify it's a JSON file now
+                if (!UtilityHelper.IsJsonFile(filePath))
+                {
+                    AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
+                    return;
+                }
+
+                // You can read from the file if this point is reached
+                AnsiConsole.MarkupLine($"processing ...");
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
+            return;
+        }
+        catch (FileNotFoundException)
+        {
+            AnsiConsole.MarkupLine($"[red]The file {filePath} does not exist. Please review the provided file path.[/]");
+            return;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
+            return;
+        }
+
+        try 
+        {
+            //validate collection against postman collection schema
+            string json = File.ReadAllText(filePath);
+
+            if(!PostmanCollectionMappingHelper.IsCollectionVersion2_1(json))
+            {
+                Console.WriteLine($"The provided JSON does not conform to the expected schema. Errors: Only Postman Collection v2.1 are supported at this time.");
+                return;
+            }
+
+            var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(json);
+
+            //validate json against known (high level) schema
+            var validationResult = await UtilityHelper.ValidateSchema(json, "postman");
+
+            if (!validationResult.isValid)
+            {
+                Console.WriteLine($"The provide json does not conform to the expected schema. Errors: {validationResult.Message}");
+                return;
+            }
+
+            var panel = new Panel($"You have [green]{postmanCollection!.Item!.Count} items[/] to import")
+            {
+                Width = 100,
+                Header = new PanelHeader("Postman Collection Data").Centered()
+            };
+            AnsiConsole.Write(panel);
+            Console.WriteLine("");
+
+            var exploreHttpClient = new HttpClient
+            {
+                BaseAddress = new Uri("https://api.explore.swaggerhub.com")
+            };
+            
+            //iterate over the items and import
+            if(postmanCollection != null && postmanCollection.Item != null)
+            {
+                //create an initial space to hold the collection items
+                var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{postmanCollection.Info?.Name}[/]"), Width = 100, UseSafeBorder = true };
+                resultTable.AddColumn("Result");
+                resultTable.AddColumn(new TableColumn("Details").Centered());   
+
+                var cleanedCollectionName = UtilityHelper.CleanString(postmanCollection.Info?.Name);
+                var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
+
+                exploreHttpClient.DefaultRequestHeaders.Clear();
+                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);        
+
+                if (spacesResponse.StatusCode == HttpStatusCode.Created)
+                {
+                    var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
+                    apiImportResults.AddColumn("Result");
+                    apiImportResults.AddColumn("API Imported");
+                    apiImportResults.AddColumn("Connection Imported");
+
+                    //parse the response
+                    var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
+
+                    //Postman Items cant contain nested items, so we can flatten the list
+                    var flattenedItems = PostmanCollectionMappingHelper.FlattenItems(postmanCollection.Item);
+                    
+                    foreach(var item in flattenedItems)
+                    {
+                        if(item.Request != null)
+                        {
+                            //check if request format is supported
+                            if(!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
+                            {
+                                apiImportResults.AddRow("[orange3]skipped[/]", $"Item '{item.Name}' skipped", $"Request method not supported");
+                                continue;
+                            }
+                            
+                            //now let's create an API entry in the space
+                            var cleanedAPIName = UtilityHelper.CleanString(item.Name);
+                            var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
+
+                            exploreHttpClient.DefaultRequestHeaders.Clear();
+                            exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                            exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                            var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
+
+                            if (apiResponse.StatusCode == HttpStatusCode.Created)
+                            {
+                                var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
+                                var connectionRequestBody = JsonSerializer.Serialize(PostmanCollectionMappingHelper.MapPostmanCollectionItemToExploreConnection(item));
+                                var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
+
+                                //now let's do the work and import the connection
+                                exploreHttpClient.DefaultRequestHeaders.Clear();
+                                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                                var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+
+                                if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                                {
+                                    apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
+                                }
+                                else
+                                {
+                                    apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
+                                }
+                            }
+                            else
+                            {
+                                apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+                            }   
+                        }
+                    }
+
+
+                    resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
+
+                    if (verboseOutput == null || verboseOutput == false)
+                    {
+                        AnsiConsole.MarkupLine($"[green]\u2713 [/]{cleanedCollectionName}");
+                    }                      
+                    
+                }  
+                else
+                {
+                    switch (spacesResponse.StatusCode)
+                    {
+                        case HttpStatusCode.OK:
+                            // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
+                            AnsiConsole.Write(resultTable);
+                            Console.WriteLine("");
+                            break;
+
+                        case HttpStatusCode.Conflict:
+                            var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
+                            apiImportResults.AddColumn("Result");
+                            apiImportResults.AddColumn("API Imported");
+                            apiImportResults.AddColumn("Connection Imported");
+                            apiImportResults.AddRow("skipped", "", "");
+
+                            resultTable.AddRow(new Markup("[orange3]skipped[/]"), apiImportResults);
+                            AnsiConsole.Write(resultTable);
+                            Console.WriteLine("");
+                            break;
+
+                        default:
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));
+                            AnsiConsole.Write(resultTable);
+                            Console.WriteLine("");
+                            break;
+                    }
+                }
+
+                if (verboseOutput != null && verboseOutput == true)
+                {
+                    AnsiConsole.Write(resultTable);
+                }                    
+
+            }
+
+            Console.WriteLine();
+            AnsiConsole.MarkupLine($"[green]Import completed[/]");            
+            
+            //ToDo - deal with scenario of item-groups
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine("File not found.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
+
     }
 
     internal static async Task ExportSpaces(string exploreCookie, string filePath, string exportFileName, string names, bool? verboseOutput)
@@ -59,7 +277,7 @@ internal class Program
         };
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         //get spaces
         var spacesResponse = await httpClient.GetAsync("/spaces-api/v1/spaces?page=0&size=2000");
@@ -131,7 +349,7 @@ internal class Program
                 // get the APIs
                 httpClient.DefaultRequestHeaders.Clear();
                 httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
                 //get space APIs
                 var apisResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{space.Id}/apis?page=0&size=2000");
@@ -157,7 +375,7 @@ internal class Program
                                 // get the API connections
                                 httpClient.DefaultRequestHeaders.Clear();
                                 httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                                httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                                httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
                                 var connectionsResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{space.Id}/apis/{api.Id}/connections?page=0&size=2000");
 
                                 if (connectionsResponse.StatusCode == HttpStatusCode.OK)
@@ -277,7 +495,7 @@ internal class Program
             var exportedSpaces = JsonSerializer.Deserialize<ExportSpaces>(json);
 
             //validate json against known (high level) schema
-            var validationResult = await UtilityHelper.ValidateSchema(json, "ExploreSpaces.schema.json");
+            var validationResult = await UtilityHelper.ValidateSchema(json, "explore");
 
             if (!validationResult.isValid)
             {
@@ -285,9 +503,11 @@ internal class Program
                 return;
             }
 
-            var panel = new Panel($"You have [green]{exportedSpaces!.ExploreSpaces!.Count} spaces[/] to import");
-            panel.Width = 100;
-            panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();
+            var panel = new Panel($"You have [green]{exportedSpaces!.ExploreSpaces!.Count} spaces[/] to import")
+            {
+                Width = 100,
+                Header = new PanelHeader("SwaggerHub Explore Data").Centered()
+            };
             AnsiConsole.Write(panel);
             Console.WriteLine("");
 
@@ -346,7 +566,10 @@ internal class Program
                                         }
                                     }
                                 }
-                                apiImportResults.AddRow("[orange3]skipped[/]", $"API '{exportedAPI.Name}' skipped", $"Kafka not yet supported by export");
+                                else
+                                {
+                                    apiImportResults.AddRow("[orange3]skipped[/]", $"API '{exportedAPI.Name}' skipped", $"Kafka not yet supported by export");
+                                }                                
                             }
                         }
 
@@ -392,7 +615,7 @@ internal class Program
         };
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         var spacesResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{id}");
 
@@ -428,7 +651,7 @@ internal class Program
         };
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         var spacesResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{id}");
 
@@ -458,7 +681,7 @@ internal class Program
         };
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         var response = await httpClient.GetAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{apiId}/connections/{id}");
 
@@ -490,7 +713,7 @@ internal class Program
         ), Encoding.UTF8, "application/json");
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         HttpResponseMessage? spacesResponse;
 
@@ -542,7 +765,7 @@ internal class Program
         ), Encoding.UTF8, "application/json");
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         HttpResponseMessage? apiResponse;
 
@@ -588,7 +811,7 @@ internal class Program
         };
 
         httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{MappingHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         var connectionContent = new StringContent(JsonSerializer.Serialize(MappingHelper.MassageConnectionExportForImport(connection)), Encoding.UTF8, "application/json");
 
