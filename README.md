@@ -153,7 +153,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
                 |_|
 ```
 **Description:**
-  > Import Postman collections from a file
+  > Import Postman collections (v2.1) from a file
 
 **Usage:**
   > Explore.CLI import-postman-collection [options]
