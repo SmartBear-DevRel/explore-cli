@@ -26,7 +26,7 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 >
 >  `import-spaces`                 Import SwaggerHub Explore spaces from a file
 >
->  `import-postman-collection`     Import Postman Collection from a file into SwaggerHub Explore
+>  `import-postman-collection`     Import a Postman Collection (v2.1) from a file into SwaggerHub Explore
 
 
 ### Prerequisites
