@@ -153,15 +153,15 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
                 |_|
 ```
 **Description:**
-  > Import SwaggerHub Explore spaces from a file
+  > Import Postman collections from a file
 
 **Usage:**
-  > Explore.CLI import-spaces [options]
+  > Explore.CLI import-postman-collection [options]
 
 **Options:**
   > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
 
-  > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the file used for importing data
+  > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the Postman collection
 
   > `-v`, `--verbose`                                      Include verbose output during processing
 
