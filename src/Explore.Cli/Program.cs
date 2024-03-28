@@ -55,6 +55,13 @@ internal class Program
         importPostmanCollectionCommand.SetHandler(async (ec, fp, v) =>
         { await ImportPostmanCollection(ec, fp, v); }, exploreCookie, importFilePath, verbose);
         
+        var loginCommand = new Command("login") { verbose };
+        loginCommand.Description = "Login to Auth0 (Demo)";
+        rootCommand.Add(loginCommand);
+
+        loginCommand.SetHandler(async (v) =>
+        { await Login(v); }, verbose);
+
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
         return await rootCommand.InvokeAsync(args);
@@ -452,6 +459,55 @@ internal class Program
         }
     }
 
+    internal static async Task Login(bool? verboseOutput)
+    {
+    var clientId = "nZ8JDrV8Hklf3JumewRl2ke3ovPZn5Ho";
+    var audience = "urn:my-videos";
+    var scope = "offline_access openid profile";
+
+    var authUApiClient = new AuthUApiClient();
+
+    // Step 1: Get Device Code
+    var deviceCodeResponse = await authUApiClient.GetDeviceCodeAsync(clientId, audience, scope);
+    var deviceCode = deviceCodeResponse.RootElement.GetProperty("device_code").GetString();
+    var userCode = deviceCodeResponse.RootElement.GetProperty("user_code").GetString();
+    var verificationUri = deviceCodeResponse.RootElement.GetProperty("verification_uri").GetString();
+
+    Console.WriteLine($"Authorization Request: {verificationUri}");
+    Console.WriteLine($"User Code: {userCode}");
+
+    // Step 2: Exchange Device Code for Token
+    Console.WriteLine("Waiting for user authorization...");
+    while (true)
+    {
+        var exchangeResponse = await authUApiClient.ExchangeDeviceCodeForTokenAsync(clientId, deviceCode);
+        if (exchangeResponse.RootElement.TryGetProperty("error", out var error))
+        {
+            if (error.GetString() == "authorization_pending")
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                continue;
+            }
+            else
+            {
+                Console.WriteLine($"Error: {error.GetString()}");
+                break;
+            }
+        }
+
+        var accessToken = exchangeResponse.RootElement.GetProperty("access_token").GetString();
+
+        // Step 3: Get User Info
+        var userInfoResponse = await authUApiClient.GetUserInfoAsync(accessToken);
+        var nickname = userInfoResponse.RootElement.GetProperty("nickname").GetString();
+
+        Console.WriteLine($"Welcome, {nickname}!");
+        Console.WriteLine("Start streaming your favourite shows from AuthU TV");
+
+        break;
+    }
+
+    }
     internal static async Task ImportSpaces(string exploreCookie, string filePath, string names, bool? verboseOutput)
     {
         //check file existence and read permissions
