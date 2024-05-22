@@ -111,4 +111,11 @@ public class UtilityHelperTests
         Assert.Equal(expected, actual);
     }
 
+    [Theory]
+    [InlineData("http://localhost:17456/api/apilogs?start_date_time=2017-09-27%2010%3A20%3A00&end_date_time=2017-09-30%2010%3A20%3A00", '/', 3, 22)]
+    public void IndexOfNth_Tests(string str, char c, int n, int expected)
+    {
+        var actual = UtilityHelper.IndexOfNth(str, c, n);
+        Assert.Equal(expected, actual);
+    }
 }

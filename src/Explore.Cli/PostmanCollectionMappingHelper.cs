@@ -1,7 +1,5 @@
-using System.Net.NetworkInformation;
 using System.Text.Json;
 using Explore.Cli.Models;
-using Namotion.Reflection;
 
 public static class PostmanCollectionMappingHelper
 {

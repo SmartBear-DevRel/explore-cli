@@ -1,4 +1,4 @@
-next-version: 0.5
+next-version: 0.6
 assembly-versioning-scheme: MajorMinorPatch
 assembly-file-versioning-scheme: MajorMinorPatchTag
 assembly-informational-format: '{InformationalVersion}'
