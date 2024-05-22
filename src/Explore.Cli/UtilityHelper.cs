@@ -1353,7 +1353,449 @@ public static class UtilityHelper
                     }
                 }
             }",
-            "pact-v3" =>@"{
+            "pact-v1" => @"{
+                ""$schema"": ""http://json-schema.org/draft-07/schema"",
+                ""title"": ""Pact V1"",
+                ""description"": ""Schema for a Pact file"",
+                ""definitions"": {
+                    ""headers"": {
+                    ""$id"": ""#/definitions/headers"",
+                    ""anyOf"": [
+                        {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {
+                            ""type"": ""string""
+                            }
+                        }
+                        },
+                        {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""type"": ""string""
+                            }
+                            }
+                        }
+                        }
+                    ]
+                    },
+                    ""interaction"": {
+                    ""$id"": ""#/definitions/interaction"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""description"": {
+                        ""type"": ""string""
+                        },
+                        ""providerState"": {
+                        ""type"": ""string""
+                        },
+                        ""provider_state"": {
+                        ""type"": ""string""
+                        },
+                        ""request"": {
+                        ""$ref"": ""#/definitions/request""
+                        },
+                        ""response"": {
+                        ""$ref"": ""#/definitions/response""
+                        }
+                    },
+                    ""required"": [
+                        ""description"",
+                        ""request"",
+                        ""response""
+                    ]
+                    },
+                    ""interactions"": {
+                    ""$id"": ""#/definitions/interactions"",
+                    ""type"": ""array"",
+                    ""items"": {
+                        ""$ref"": ""#/definitions/interaction""
+                    }
+                    },
+                    ""metadata"": {
+                    ""$id"": ""#/definitions/metadata"",
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""pactSpecification"": {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""version"": {
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""version""
+                        ]
+                        },
+                        ""pactSpecificationVersion"": {
+                        ""type"": ""string""
+                        },
+                        ""pact-specification"": {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""version"": {
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""version""
+                        ]
+                        }
+                    }
+                    },
+                    ""pacticipant"": {
+                    ""$id"": ""#/definitions/pacticipant"",
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""name"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""name""
+                    ]
+                    },
+                    ""request"": {
+                    ""$id"": ""#/definitions/request"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""body"": {},
+                        ""headers"": {
+                        ""$ref"": ""#/definitions/headers""
+                        },
+                        ""method"": {
+                        ""type"": ""string"",
+                        ""enum"": [
+                            ""connect"",
+                            ""CONNECT"",
+                            ""delete"",
+                            ""DELETE"",
+                            ""get"",
+                            ""GET"",
+                            ""head"",
+                            ""HEAD"",
+                            ""options"",
+                            ""OPTIONS"",
+                            ""post"",
+                            ""POST"",
+                            ""put"",
+                            ""PUT"",
+                            ""trace"",
+                            ""TRACE""
+                        ]
+                        },
+                        ""path"": {
+                        ""type"": ""string""
+                        },
+                        ""query"": {
+                        ""type"": ""string"",
+                        ""pattern"": ""^$|^[^=&]+=[^=&]+&?$|^[^=&]+=[^=&]+(&[^=&]+=[^=&]+)*&?$""
+                        }
+                    },
+                    ""required"": [
+                        ""method"",
+                        ""path""
+                    ]
+                    },
+                    ""response"": {
+                    ""$id"": ""#/definitions/response"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""body"": {},
+                        ""headers"": {
+                        ""$ref"": ""#/definitions/headers""
+                        },
+                        ""status"": {
+                        ""minimum"": 100,
+                        ""maximum"": 599,
+                        ""type"": ""integer""
+                        }
+                    },
+                    ""required"": [
+                        ""status""
+                    ]
+                    }
+                },
+                ""type"": ""object"",
+                ""properties"": {
+                    ""consumer"": {
+                    ""$ref"": ""#/definitions/pacticipant""
+                    },
+                    ""interactions"": {
+                    ""$ref"": ""#/definitions/interactions""
+                    },
+                    ""metadata"": {
+                    ""$ref"": ""#/definitions/metadata""
+                    },
+                    ""provider"": {
+                    ""$ref"": ""#/definitions/pacticipant""
+                    }
+                },
+                ""required"": [
+                    ""consumer"",
+                    ""interactions"",
+                    ""provider""
+                ]
+                }",
+            "pact-v2" =>@"{
+                ""$schema"": ""http://json-schema.org/draft-07/schema"",
+                ""title"": ""Pact V2"",
+                ""description"": ""Schema for a Pact file"",
+                ""definitions"": {
+                    ""headers"": {
+                    ""$id"": ""#/definitions/headers"",
+                    ""anyOf"": [
+                        {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {
+                            ""type"": ""string""
+                            }
+                        }
+                        },
+                        {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""type"": ""string""
+                            }
+                            }
+                        }
+                        }
+                    ]
+                    },
+                    ""interaction"": {
+                    ""$id"": ""#/definitions/interaction"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""description"": {
+                        ""type"": ""string""
+                        },
+                        ""providerState"": {
+                        ""type"": ""string""
+                        },
+                        ""request"": {
+                        ""$ref"": ""#/definitions/request""
+                        },
+                        ""response"": {
+                        ""$ref"": ""#/definitions/response""
+                        }
+                    },
+                    ""required"": [
+                        ""description"",
+                        ""request"",
+                        ""response""
+                    ]
+                    },
+                    ""interactions"": {
+                    ""$id"": ""#/definitions/interactions"",
+                    ""type"": ""array"",
+                    ""items"": {
+                        ""$ref"": ""#/definitions/interaction""
+                    }
+                    },
+                    ""matchRegex"": {
+                    ""$id"": ""#/definitions/matchRegex"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""regex"",
+                        ""type"": ""string""
+                        },
+                        ""regex"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""regex""
+                    ]
+                    },
+                    ""matchType"": {
+                    ""$id"": ""#/definitions/matchType"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""type"",
+                        ""type"": ""string""
+                        },
+                        ""max"": {
+                        ""type"": ""number""
+                        },
+                        ""min"": {
+                        ""type"": ""number""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchingRules"": {
+                    ""$id"": ""#/definitions/matchingRules"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""patternProperties"": {
+                        ""^\\$.*$"": {
+                        ""oneOf"": [
+                            {
+                            ""$ref"": ""#/definitions/matchRegex""
+                            },
+                            {
+                            ""$ref"": ""#/definitions/matchType""
+                            }
+                        ]
+                        }
+                    }
+                    },
+                    ""metadata"": {
+                    ""$id"": ""#/definitions/metadata"",
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""pactSpecification"": {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""version"": {
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""version""
+                        ]
+                        },
+                        ""pactSpecificationVersion"": {
+                        ""type"": ""string""
+                        },
+                        ""pact-specification"": {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""version"": {
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""version""
+                        ]
+                        }
+                    }
+                    },
+                    ""pacticipant"": {
+                    ""$id"": ""#/definitions/pacticipant"",
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""name"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""name""
+                    ]
+                    },
+                    ""request"": {
+                    ""$id"": ""#/definitions/request"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""body"": {},
+                        ""headers"": {
+                        ""$ref"": ""#/definitions/headers""
+                        },
+                        ""method"": {
+                        ""type"": ""string"",
+                        ""enum"": [
+                            ""connect"",
+                            ""CONNECT"",
+                            ""delete"",
+                            ""DELETE"",
+                            ""get"",
+                            ""GET"",
+                            ""head"",
+                            ""HEAD"",
+                            ""options"",
+                            ""OPTIONS"",
+                            ""post"",
+                            ""POST"",
+                            ""put"",
+                            ""PUT"",
+                            ""trace"",
+                            ""TRACE""
+                        ]
+                        },
+                        ""path"": {
+                        ""type"": ""string""
+                        },
+                        ""query"": {
+                        ""type"": ""string"",
+                        ""pattern"": ""^$|^[^=&]+=[^=&]+&?$|^[^=&]+=[^=&]+(&[^=&]+=[^=&]+)*&?$""
+                        },
+                        ""matchingRules"": {
+                        ""$ref"": ""#/definitions/matchingRules""
+                        }
+                    },
+                    ""required"": [
+                        ""method"",
+                        ""path""
+                    ]
+                    },
+                    ""response"": {
+                    ""$id"": ""#/definitions/response"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""body"": {},
+                        ""headers"": {
+                        ""$ref"": ""#/definitions/headers""
+                        },
+                        ""status"": {
+                        ""minimum"": 100,
+                        ""maximum"": 599,
+                        ""type"": ""integer""
+                        },
+                        ""matchingRules"": {
+                        ""$ref"": ""#/definitions/matchingRules""
+                        }
+                    },
+                    ""required"": [
+                        ""status""
+                    ]
+                    }
+                },
+                ""type"": ""object"",
+                ""properties"": {
+                    ""consumer"": {
+                    ""$ref"": ""#/definitions/pacticipant""
+                    },
+                    ""interactions"": {
+                    ""$ref"": ""#/definitions/interactions""
+                    },
+                    ""metadata"": {
+                    ""$ref"": ""#/definitions/metadata""
+                    },
+                    ""provider"": {
+                    ""$ref"": ""#/definitions/pacticipant""
+                    }
+                },
+                ""required"": [
+                    ""consumer"",
+                    ""interactions"",
+                    ""provider""
+                ]
+                }",
+            "pact-v3" => @"{
                 ""$schema"": ""http://json-schema.org/draft-07/schema"",
                 ""title"": ""Pact V3"",
                 ""description"": ""Schema for a Pact file"",
@@ -2247,6 +2689,1448 @@ public static class UtilityHelper
                         ""provider""
                     ]
                     }",
+            "pact-v4" =>@"{
+                ""$schema"": ""http://json-schema.org/draft-07/schema"",
+                ""title"": ""Pact V4"",
+                ""description"": ""Schema for a Pact file"",
+                ""definitions"": {
+                    ""body"": {
+                    ""$id"": ""#/definitions/body"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""content"": {
+                        ""anyOf"": [
+                            {
+                            ""type"": ""string""
+                            },
+                            {}
+                        ]
+                        },
+                        ""contentType"": {
+                        ""type"": ""string""
+                        },
+                        ""contentTypeHint"": {
+                        ""anyOf"": [
+                            {
+                            ""const"": ""BINARY"",
+                            ""type"": ""string""
+                            },
+                            {
+                            ""const"": ""TEXT"",
+                            ""type"": ""string""
+                            }
+                        ]
+                        },
+                        ""encoded"": {
+                        ""anyOf"": [
+                            {
+                            ""type"": ""boolean""
+                            },
+                            {
+                            ""type"": ""string""
+                            }
+                        ]
+                        }
+                    },
+                    ""required"": [
+                        ""content"",
+                        ""contentType"",
+                        ""contentTypeHint"",
+                        ""encoded""
+                    ]
+                    },
+                    ""genDate"": {
+                    ""$id"": ""#/definitions/genDate"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""Date"",
+                        ""type"": ""string""
+                        },
+                        ""format"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type""
+                    ]
+                    },
+                    ""genDateTime"": {
+                    ""$id"": ""#/definitions/genDateTime"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""DateTime"",
+                        ""type"": ""string""
+                        },
+                        ""format"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type""
+                    ]
+                    },
+                    ""genMockServerURL"": {
+                    ""$id"": ""#/definitions/genMockServerURL"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""MockServerURL"",
+                        ""type"": ""string""
+                        },
+                        ""regex"": {
+                        ""type"": ""string""
+                        },
+                        ""example"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""regex"",
+                        ""example""
+                    ]
+                    },
+                    ""genProviderState"": {
+                    ""$id"": ""#/definitions/genProviderState"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""ProviderState"",
+                        ""type"": ""string""
+                        },
+                        ""expression"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""expression""
+                    ]
+                    },
+                    ""genRandomBoolean"": {
+                    ""$id"": ""#/definitions/genRandomBoolean"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""RandomBoolean"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type""
+                    ]
+                    },
+                    ""genRandomDecimal"": {
+                    ""$id"": ""#/definitions/genRandomDecimal"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""RandomDecimal"",
+                        ""type"": ""string""
+                        },
+                        ""digits"": {
+                        ""type"": ""number""
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""digits""
+                    ]
+                    },
+                    ""genRandomHexadecimal"": {
+                    ""$id"": ""#/definitions/genRandomHexadecimal"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""RandomHexadecimal"",
+                        ""type"": ""string""
+                        },
+                        ""digits"": {
+                        ""type"": ""number""
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""digits""
+                    ]
+                    },
+                    ""genRandomInt"": {
+                    ""$id"": ""#/definitions/genRandomInt"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""RandomInt"",
+                        ""type"": ""string""
+                        },
+                        ""min"": {
+                        ""type"": ""number""
+                        },
+                        ""max"": {
+                        ""type"": ""number""
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""min"",
+                        ""max""
+                    ]
+                    },
+                    ""genRandomString"": {
+                    ""$id"": ""#/definitions/genRandomString"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""RandomString"",
+                        ""type"": ""string""
+                        },
+                        ""size"": {
+                        ""type"": ""number""
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""size""
+                    ]
+                    },
+                    ""genRegex"": {
+                    ""$id"": ""#/definitions/genRegex"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""Regex"",
+                        ""type"": ""string""
+                        },
+                        ""regex"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""regex""
+                    ]
+                    },
+                    ""genTime"": {
+                    ""$id"": ""#/definitions/genTime"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""Time"",
+                        ""type"": ""string""
+                        },
+                        ""format"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type""
+                    ]
+                    },
+                    ""genUuid"": {
+                    ""$id"": ""#/definitions/genUuid"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""Uuid"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""type""
+                    ]
+                    },
+                    ""genUuidFormat"": {
+                    ""$id"": ""#/definitions/genUuidFormat"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""type"": {
+                        ""const"": ""Uuid"",
+                        ""type"": ""string""
+                        },
+                        ""format"": {
+                        ""anyOf"": [
+                            {
+                            ""const"": ""simple"",
+                            ""type"": ""string""
+                            },
+                            {
+                            ""const"": ""lower-case-hyphenated"",
+                            ""type"": ""string""
+                            },
+                            {
+                            ""const"": ""upper-case-hyphenated"",
+                            ""type"": ""string""
+                            },
+                            {
+                            ""const"": ""URN"",
+                            ""type"": ""string""
+                            }
+                        ]
+                        }
+                    },
+                    ""required"": [
+                        ""type"",
+                        ""format""
+                    ]
+                    },
+                    ""bodyGenerator"": {
+                    ""$id"": ""#/definitions/bodyGenerator"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""patternProperties"": {
+                        ""^\\$.*$"": {
+                        ""$ref"": ""#/definitions/generator""
+                        }
+                    }
+                    },
+                    ""recordGenerator"": {
+                    ""$id"": ""#/definitions/recordGenerator"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""patternProperties"": {
+                        ""^(.*)$"": {
+                        ""$ref"": ""#/definitions/generator""
+                        }
+                    }
+                    },
+                    ""generator"": {
+                    ""oneOf"": [
+                        {
+                        ""$ref"": ""#/definitions/genDate""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genDateTime""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genRandomBoolean""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genRandomDecimal""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genRandomHexadecimal""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genRandomInt""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genRandomString""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genRegex""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genTime""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genUuid""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genMockServerURL""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genProviderState""
+                        },
+                        {
+                        ""$ref"": ""#/definitions/genUuidFormat""
+                        }
+                    ],
+                    ""$id"": ""#/definitions/generator""
+                    },
+                    ""headers"": {
+                    ""$id"": ""#/definitions/headers"",
+                    ""anyOf"": [
+                        {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {
+                            ""type"": ""string""
+                            }
+                        }
+                        },
+                        {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""type"": ""string""
+                            }
+                            }
+                        }
+                        }
+                    ]
+                    },
+                    ""interaction"": {
+                    ""$id"": ""#/definitions/interaction"",
+                    ""anyOf"": [
+                        {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""comments"": {
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""testname"": {
+                                ""type"": ""string""
+                                },
+                                ""text"": {
+                                ""type"": ""array"",
+                                ""items"": {
+                                    ""type"": ""string""
+                                }
+                                }
+                            }
+                            },
+                            ""interactionMarkup"": {
+                            ""additionalProperties"": false,
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""markup"": {
+                                ""type"": ""string""
+                                },
+                                ""markupType"": {
+                                ""anyOf"": [
+                                    {
+                                    ""const"": ""COMMON_MARK"",
+                                    ""type"": ""string""
+                                    },
+                                    {
+                                    ""const"": ""HTML"",
+                                    ""type"": ""string""
+                                    }
+                                ]
+                                }
+                            },
+                            ""required"": [
+                                ""markup"",
+                                ""markupType""
+                            ]
+                            },
+                            ""key"": {
+                            ""type"": ""string""
+                            },
+                            ""pending"": {
+                            ""type"": ""boolean""
+                            },
+                            ""pluginConfiguration"": {
+                            ""type"": ""object"",
+                            ""patternProperties"": {
+                                ""^(.*)$"": {
+                                ""type"": ""object"",
+                                ""patternProperties"": {
+                                    ""^(.*)$"": {}
+                                }
+                                }
+                            }
+                            },
+                            ""description"": {
+                            ""type"": ""string""
+                            },
+                            ""request"": {
+                            ""$ref"": ""#/definitions/request""
+                            },
+                            ""response"": {
+                            ""$ref"": ""#/definitions/response""
+                            },
+                            ""providerStates"": {
+                            ""anyOf"": [
+                                {
+                                ""type"": ""string""
+                                },
+                                {
+                                ""type"": ""array"",
+                                ""items"": {
+                                    ""type"": ""object"",
+                                    ""properties"": {
+                                    ""name"": {
+                                        ""type"": ""string""
+                                    },
+                                    ""params"": {
+                                        ""type"": ""object"",
+                                        ""patternProperties"": {
+                                        ""^(.*)$"": {}
+                                        }
+                                    }
+                                    },
+                                    ""required"": [
+                                    ""name""
+                                    ]
+                                }
+                                }
+                            ]
+                            },
+                            ""type"": {
+                            ""const"": ""Synchronous/HTTP"",
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""description"",
+                            ""request"",
+                            ""response"",
+                            ""type""
+                        ]
+                        },
+                        {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""comments"": {
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""testname"": {
+                                ""type"": ""string""
+                                },
+                                ""text"": {
+                                ""type"": ""array"",
+                                ""items"": {
+                                    ""type"": ""string""
+                                }
+                                }
+                            }
+                            },
+                            ""interactionMarkup"": {
+                            ""additionalProperties"": false,
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""markup"": {
+                                ""type"": ""string""
+                                },
+                                ""markupType"": {
+                                ""anyOf"": [
+                                    {
+                                    ""const"": ""COMMON_MARK"",
+                                    ""type"": ""string""
+                                    },
+                                    {
+                                    ""const"": ""HTML"",
+                                    ""type"": ""string""
+                                    }
+                                ]
+                                }
+                            },
+                            ""required"": [
+                                ""markup"",
+                                ""markupType""
+                            ]
+                            },
+                            ""key"": {
+                            ""type"": ""string""
+                            },
+                            ""pending"": {
+                            ""type"": ""boolean""
+                            },
+                            ""pluginConfiguration"": {
+                            ""type"": ""object"",
+                            ""patternProperties"": {
+                                ""^(.*)$"": {
+                                ""type"": ""object"",
+                                ""patternProperties"": {
+                                    ""^(.*)$"": {}
+                                }
+                                }
+                            }
+                            },
+                            ""description"": {
+                            ""type"": ""string""
+                            },
+                            ""providerStates"": {
+                            ""anyOf"": [
+                                {
+                                ""type"": ""string""
+                                },
+                                {
+                                ""type"": ""array"",
+                                ""items"": {
+                                    ""type"": ""object"",
+                                    ""properties"": {
+                                    ""name"": {
+                                        ""type"": ""string""
+                                    },
+                                    ""params"": {
+                                        ""type"": ""object"",
+                                        ""patternProperties"": {
+                                        ""^(.*)$"": {}
+                                        }
+                                    }
+                                    },
+                                    ""required"": [
+                                    ""name""
+                                    ]
+                                }
+                                }
+                            ]
+                            },
+                            ""contents"": {},
+                            ""metadata"": {
+                            ""type"": ""object"",
+                            ""patternProperties"": {
+                                ""^(.*)$"": {}
+                            }
+                            },
+                            ""metaData"": {
+                            ""type"": ""object"",
+                            ""patternProperties"": {
+                                ""^(.*)$"": {}
+                            }
+                            },
+                            ""matchingRules"": {
+                            ""additionalProperties"": false,
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""body"": {
+                                ""$ref"": ""#/definitions/bodyMatcher""
+                                }
+                            },
+                            ""required"": [
+                                ""body""
+                            ]
+                            },
+                            ""generators"": {
+                            ""additionalProperties"": false,
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""body"": {
+                                ""$ref"": ""#/definitions/bodyGenerator""
+                                },
+                                ""metadata"": {
+                                ""$ref"": ""#/definitions/recordGenerator""
+                                }
+                            }
+                            },
+                            ""type"": {
+                            ""const"": ""Asynchronous/Messages"",
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""description"",
+                            ""contents"",
+                            ""type""
+                        ]
+                        },
+                        {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""comments"": {
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""testname"": {
+                                ""type"": ""string""
+                                },
+                                ""text"": {
+                                ""type"": ""array"",
+                                ""items"": {
+                                    ""type"": ""string""
+                                }
+                                }
+                            }
+                            },
+                            ""interactionMarkup"": {
+                            ""additionalProperties"": false,
+                            ""type"": ""object"",
+                            ""properties"": {
+                                ""markup"": {
+                                ""type"": ""string""
+                                },
+                                ""markupType"": {
+                                ""anyOf"": [
+                                    {
+                                    ""const"": ""COMMON_MARK"",
+                                    ""type"": ""string""
+                                    },
+                                    {
+                                    ""const"": ""HTML"",
+                                    ""type"": ""string""
+                                    }
+                                ]
+                                }
+                            },
+                            ""required"": [
+                                ""markup"",
+                                ""markupType""
+                            ]
+                            },
+                            ""key"": {
+                            ""type"": ""string""
+                            },
+                            ""pending"": {
+                            ""type"": ""boolean""
+                            },
+                            ""pluginConfiguration"": {
+                            ""type"": ""object"",
+                            ""patternProperties"": {
+                                ""^(.*)$"": {
+                                ""type"": ""object"",
+                                ""patternProperties"": {
+                                    ""^(.*)$"": {}
+                                }
+                                }
+                            }
+                            },
+                            ""description"": {
+                            ""type"": ""string""
+                            },
+                            ""providerStates"": {
+                            ""anyOf"": [
+                                {
+                                ""type"": ""string""
+                                },
+                                {
+                                ""type"": ""array"",
+                                ""items"": {
+                                    ""type"": ""object"",
+                                    ""properties"": {
+                                    ""name"": {
+                                        ""type"": ""string""
+                                    },
+                                    ""params"": {
+                                        ""type"": ""object"",
+                                        ""patternProperties"": {
+                                        ""^(.*)$"": {}
+                                        }
+                                    }
+                                    },
+                                    ""required"": [
+                                    ""name""
+                                    ]
+                                }
+                                }
+                            ]
+                            },
+                            ""request"": {
+                            ""$ref"": ""#/definitions/messageContents""
+                            },
+                            ""response"": {
+                            ""type"": ""array"",
+                            ""items"": {
+                                ""$ref"": ""#/definitions/messageContents""
+                            }
+                            },
+                            ""type"": {
+                            ""const"": ""Synchronous/Messages"",
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""description"",
+                            ""request"",
+                            ""response"",
+                            ""type""
+                        ]
+                        }
+                    ]
+                    },
+                    ""interactions"": {
+                    ""$id"": ""#/definitions/interactions"",
+                    ""type"": ""array"",
+                    ""items"": {
+                        ""$ref"": ""#/definitions/interaction""
+                    }
+                    },
+                    ""matchArrayContains"": {
+                    ""$id"": ""#/definitions/matchArrayContains"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""arrayContains"",
+                        ""type"": ""string""
+                        },
+                        ""variants"": {
+                        ""type"": ""array"",
+                        ""items"": {}
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""variants""
+                    ]
+                    },
+                    ""matchBoolean"": {
+                    ""$id"": ""#/definitions/matchBoolean"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""boolean"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchContentType"": {
+                    ""$id"": ""#/definitions/matchContentType"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""contentType"",
+                        ""type"": ""string""
+                        },
+                        ""value"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""value""
+                    ]
+                    },
+                    ""matchDate"": {
+                    ""$id"": ""#/definitions/matchDate"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""date"",
+                        ""type"": ""string""
+                        },
+                        ""format"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""format""
+                    ]
+                    },
+                    ""matchDatetime"": {
+                    ""$id"": ""#/definitions/matchDatetime"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""datetime"",
+                        ""type"": ""string""
+                        },
+                        ""format"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""format""
+                    ]
+                    },
+                    ""matchDecimal"": {
+                    ""$id"": ""#/definitions/matchDecimal"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""decimal"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchEachKey"": {
+                    ""$id"": ""#/definitions/matchEachKey"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""eachKey"",
+                        ""type"": ""string""
+                        },
+                        ""rules"": {
+                        ""type"": ""array"",
+                        ""items"": {}
+                        },
+                        ""value"": {
+                        ""type"": ""string"",
+                        ""pattern"": ""^\\$.*$""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""rules"",
+                        ""value""
+                    ]
+                    },
+                    ""matchEachValue"": {
+                    ""$id"": ""#/definitions/matchEachValue"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""eachValue"",
+                        ""type"": ""string""
+                        },
+                        ""rules"": {
+                        ""type"": ""array"",
+                        ""items"": {}
+                        },
+                        ""value"": {
+                        ""type"": ""string"",
+                        ""pattern"": ""^\\$.*$""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""rules"",
+                        ""value""
+                    ]
+                    },
+                    ""matchEquality"": {
+                    ""$id"": ""#/definitions/matchEquality"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""equality"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchInclude"": {
+                    ""$id"": ""#/definitions/matchInclude"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""include"",
+                        ""type"": ""string""
+                        },
+                        ""value"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""value""
+                    ]
+                    },
+                    ""matchInteger"": {
+                    ""$id"": ""#/definitions/matchInteger"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""integer"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchNotEmpty"": {
+                    ""$id"": ""#/definitions/matchNotEmpty"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""notEmpty"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchNull"": {
+                    ""$id"": ""#/definitions/matchNull"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""null"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchNumber"": {
+                    ""$id"": ""#/definitions/matchNumber"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""number"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchRegex"": {
+                    ""$id"": ""#/definitions/matchRegex"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""regex"",
+                        ""type"": ""string""
+                        },
+                        ""regex"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""regex""
+                    ]
+                    },
+                    ""matchSemver"": {
+                    ""$id"": ""#/definitions/matchSemver"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""semver"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchStatusCode"": {
+                    ""$id"": ""#/definitions/matchStatusCode"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""statusCode"",
+                        ""type"": ""string""
+                        },
+                        ""status"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""status""
+                    ]
+                    },
+                    ""matchTime"": {
+                    ""$id"": ""#/definitions/matchTime"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""time"",
+                        ""type"": ""string""
+                        },
+                        ""format"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match"",
+                        ""format""
+                    ]
+                    },
+                    ""matchType"": {
+                    ""$id"": ""#/definitions/matchType"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""type"",
+                        ""type"": ""string""
+                        },
+                        ""max"": {
+                        ""type"": ""number""
+                        },
+                        ""min"": {
+                        ""type"": ""number""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchValues"": {
+                    ""$id"": ""#/definitions/matchValues"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""match"": {
+                        ""const"": ""values"",
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""match""
+                    ]
+                    },
+                    ""matchers"": {
+                    ""$id"": ""#/definitions/matchers"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""combine"": {
+                        ""anyOf"": [
+                            {
+                            ""const"": ""AND"",
+                            ""type"": ""string""
+                            },
+                            {
+                            ""const"": ""OR"",
+                            ""type"": ""string""
+                            }
+                        ]
+                        },
+                        ""matchers"": {
+                        ""type"": ""array"",
+                        ""items"": {
+                            ""anyOf"": [
+                            {
+                                ""$ref"": ""#/definitions/matchRegex""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchType""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchBoolean""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchContentType""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchDate""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchDatetime""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchDecimal""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchEquality""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchInclude""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchInteger""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchNull""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchNumber""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchTime""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchValues""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchArrayContains""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchEachKey""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchEachValue""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchNotEmpty""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchSemver""
+                            },
+                            {
+                                ""$ref"": ""#/definitions/matchStatusCode""
+                            }
+                            ]
+                        }
+                        }
+                    },
+                    ""required"": [
+                        ""matchers""
+                    ]
+                    },
+                    ""matchingRules"": {
+                    ""$id"": ""#/definitions/matchingRules"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""body"": {
+                        ""$ref"": ""#/definitions/bodyMatcher""
+                        },
+                        ""header"": {
+                        ""$ref"": ""#/definitions/recordMatcher""
+                        },
+                        ""path"": {
+                        ""$ref"": ""#/definitions/matchers""
+                        },
+                        ""query"": {
+                        ""$ref"": ""#/definitions/recordMatcher""
+                        }
+                    }
+                    },
+                    ""messageContents"": {
+                    ""$id"": ""#/definitions/messageContents"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""contents"": {},
+                        ""metadata"": {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {}
+                        }
+                        },
+                        ""metaData"": {
+                        ""type"": ""object"",
+                        ""patternProperties"": {
+                            ""^(.*)$"": {}
+                        }
+                        },
+                        ""matchingRules"": {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""body"": {
+                            ""$ref"": ""#/definitions/bodyMatcher""
+                            }
+                        },
+                        ""required"": [
+                            ""body""
+                        ]
+                        },
+                        ""generators"": {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""body"": {
+                            ""$ref"": ""#/definitions/bodyGenerator""
+                            },
+                            ""metadata"": {
+                            ""$ref"": ""#/definitions/recordGenerator""
+                            }
+                        }
+                        }
+                    },
+                    ""required"": [
+                        ""contents""
+                    ]
+                    },
+                    ""metadata"": {
+                    ""$id"": ""#/definitions/metadata"",
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""pactSpecification"": {
+                        ""additionalProperties"": false,
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""version"": {
+                            ""type"": ""string""
+                            }
+                        },
+                        ""required"": [
+                            ""version""
+                        ]
+                        }
+                    }
+                    },
+                    ""bodyMatcher"": {
+                    ""$id"": ""#/definitions/bodyMatcher"",
+                    ""type"": ""object"",
+                    ""patternProperties"": {
+                        ""^\\$.*$"": {
+                        ""$ref"": ""#/definitions/matchers""
+                        }
+                    }
+                    },
+                    ""recordMatcher"": {
+                    ""$id"": ""#/definitions/recordMatcher"",
+                    ""type"": ""object"",
+                    ""patternProperties"": {
+                        ""^(.*)$"": {
+                        ""$ref"": ""#/definitions/matchers""
+                        }
+                    }
+                    },
+                    ""pacticipant"": {
+                    ""$id"": ""#/definitions/pacticipant"",
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""name"": {
+                        ""type"": ""string""
+                        }
+                    },
+                    ""required"": [
+                        ""name""
+                    ]
+                    },
+                    ""request"": {
+                    ""$id"": ""#/definitions/request"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""headers"": {
+                        ""$ref"": ""#/definitions/headers""
+                        },
+                        ""method"": {
+                        ""type"": ""string"",
+                        ""enum"": [
+                            ""connect"",
+                            ""CONNECT"",
+                            ""delete"",
+                            ""DELETE"",
+                            ""get"",
+                            ""GET"",
+                            ""head"",
+                            ""HEAD"",
+                            ""options"",
+                            ""OPTIONS"",
+                            ""post"",
+                            ""POST"",
+                            ""put"",
+                            ""PUT"",
+                            ""trace"",
+                            ""TRACE""
+                        ]
+                        },
+                        ""path"": {
+                        ""type"": ""string""
+                        },
+                        ""matchingRules"": {
+                        ""$ref"": ""#/definitions/matchingRules""
+                        },
+                        ""generators"": {
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""body"": {
+                            ""$ref"": ""#/definitions/bodyGenerator""
+                            },
+                            ""headers"": {
+                            ""$ref"": ""#/definitions/recordGenerator""
+                            },
+                            ""path"": {
+                            ""$ref"": ""#/definitions/recordGenerator""
+                            },
+                            ""query"": {
+                            ""$ref"": ""#/definitions/generator""
+                            }
+                        }
+                        },
+                        ""query"": {
+                        ""anyOf"": [
+                            {
+                            ""type"": ""object"",
+                            ""patternProperties"": {
+                                ""^(.*)$"": {
+                                ""type"": ""string""
+                                }
+                            }
+                            },
+                            {
+                            ""type"": ""object"",
+                            ""patternProperties"": {
+                                ""^(.*)$"": {
+                                ""type"": ""array"",
+                                ""items"": {
+                                    ""type"": ""string""
+                                }
+                                }
+                            }
+                            }
+                        ]
+                        },
+                        ""body"": {
+                        ""$ref"": ""#/definitions/body""
+                        }
+                    },
+                    ""required"": [
+                        ""method"",
+                        ""path""
+                    ]
+                    },
+                    ""response"": {
+                    ""$id"": ""#/definitions/response"",
+                    ""additionalProperties"": false,
+                    ""type"": ""object"",
+                    ""properties"": {
+                        ""headers"": {
+                        ""$ref"": ""#/definitions/headers""
+                        },
+                        ""status"": {
+                        ""minimum"": 100,
+                        ""maximum"": 599,
+                        ""type"": ""integer""
+                        },
+                        ""matchingRules"": {
+                        ""$ref"": ""#/definitions/matchingRules""
+                        },
+                        ""generators"": {
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""body"": {
+                            ""$ref"": ""#/definitions/bodyGenerator""
+                            },
+                            ""headers"": {
+                            ""$ref"": ""#/definitions/recordGenerator""
+                            },
+                            ""status"": {
+                            ""$ref"": ""#/definitions/generator""
+                            }
+                        }
+                        },
+                        ""body"": {
+                        ""$ref"": ""#/definitions/body""
+                        }
+                    },
+                    ""required"": [
+                        ""status""
+                    ]
+                    }
+                },
+                ""type"": ""object"",
+                ""properties"": {
+                    ""consumer"": {
+                    ""$ref"": ""#/definitions/pacticipant""
+                    },
+                    ""interactions"": {
+                    ""$ref"": ""#/definitions/interactions""
+                    },
+                    ""metadata"": {
+                    ""$ref"": ""#/definitions/metadata""
+                    },
+                    ""provider"": {
+                    ""$ref"": ""#/definitions/pacticipant""
+                    }
+                },
+                ""required"": [
+                    ""consumer"",
+                    ""interactions"",
+                    ""provider""
+                ]
+                }",
             _ => string.Empty,
         };
     }
@@ -2254,7 +4138,7 @@ public static class UtilityHelper
     public static async Task<SchemaValidationResult> ValidateSchema(string jsonAsString, string schemaName)
     {
         var validationResult = new SchemaValidationResult();
-        var schemaAsString = GetSchemaByApplicationName(schemaName);       
+        var schemaAsString = GetSchemaByApplicationName(schemaName);
 
         //var schema = await JsonSchema.FromFileAsync($"/schemas/{schemaName}");        
         var schema = await JsonSchema.FromJsonAsync(schemaAsString);
