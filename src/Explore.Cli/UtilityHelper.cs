@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.StaticFiles;
 using NJsonSchema;
 using Spectre.Console;
+using Explore.Cli.Models;
 
 public static class UtilityHelper
 {

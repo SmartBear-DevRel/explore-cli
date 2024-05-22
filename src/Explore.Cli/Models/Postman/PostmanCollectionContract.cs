@@ -2,6 +2,7 @@
 
 using System.Text.Json.Serialization;
 
+namespace Explore.Cli.Models.Postman;
 public class PostmanCollection
 {
     [JsonPropertyName("info")]

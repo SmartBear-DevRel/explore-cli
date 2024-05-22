@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Explore.Cli.Models;
+using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Insomnia;
 
 public static class InsomniaCollectionMappingHelper
@@ -207,16 +207,16 @@ public static class InsomniaCollectionMappingHelper
         };        
     }    
 
-    public static List<Explore.Cli.Models.Parameter> MapHeaderAndQueryParams(Resource resource, List<Resource> environmentResources)
+    public static List<Explore.Cli.Models.Explore.Parameter> MapHeaderAndQueryParams(Resource resource, List<Resource> environmentResources)
     {
-        List<Explore.Cli.Models.Parameter> parameters = new List<Explore.Cli.Models.Parameter>();
+        List<Explore.Cli.Models.Explore.Parameter> parameters = new List<Explore.Cli.Models.Explore.Parameter>();
 
         if(resource.Headers != null && resource.Headers.Any())
         {
             // map the headers
             foreach(var hdr in resource.Headers)
             {
-                parameters.Add(new Explore.Cli.Models.Parameter()
+                parameters.Add(new Explore.Cli.Models.Explore.Parameter()
                 {
                     In = "header",
                     Name = ReplaceEnvironmentVariables(hdr.Name, environmentResources),
@@ -235,7 +235,7 @@ public static class InsomniaCollectionMappingHelper
         //if we have urlencoded body then force the content type header as plaintext (Explore doesn't support urlencoded natively)
         if(resource?.Body != null && resource.Body.Params != null && resource.Body.Params.Any())
         {
-            parameters.Add(new Explore.Cli.Models.Parameter()
+            parameters.Add(new Explore.Cli.Models.Explore.Parameter()
             {
                 In = "header",
                 Name = "Content-Type",
@@ -258,7 +258,7 @@ public static class InsomniaCollectionMappingHelper
         {
             foreach(var param in resource.Parameters)
             {
-                parameters.Add(new Explore.Cli.Models.Parameter()
+                parameters.Add(new Explore.Cli.Models.Explore.Parameter()
                 {
                     In = "query",
                     Name = param.Name,
@@ -288,7 +288,7 @@ public static class InsomniaCollectionMappingHelper
                     continue;
                 }
 
-                parameters.Add(new Explore.Cli.Models.Parameter()
+                parameters.Add(new Explore.Cli.Models.Explore.Parameter()
                 {
                     In = "query",
                     Name = keyValuePair[0],

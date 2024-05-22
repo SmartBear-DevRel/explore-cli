@@ -1,4 +1,5 @@
-using Explore.Cli.Models;
+using Explore.Cli.Models.Explore;
+using Explore.Cli.Models.Postman;
 using System.Text.Json;
 
 public class PostmanCollectionMappingHelperTests

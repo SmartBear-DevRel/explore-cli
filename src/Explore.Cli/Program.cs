@@ -3,9 +3,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Explore.Cli.Models;
-using Explore.Cli.Models.Insomnia;
 using Spectre.Console;
+using Explore.Cli.Models.Explore;
+using Explore.Cli.Models.Postman;
+using Explore.Cli.Models.Insomnia;
 
 internal class Program
 {

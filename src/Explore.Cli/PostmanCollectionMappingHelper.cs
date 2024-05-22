@@ -1,5 +1,6 @@
 using System.Text.Json;
-using Explore.Cli.Models;
+using Explore.Cli.Models.Explore;
+using Explore.Cli.Models.Postman;
 
 public static class PostmanCollectionMappingHelper
 {

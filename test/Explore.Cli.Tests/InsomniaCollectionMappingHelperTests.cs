@@ -1,4 +1,4 @@
-using Explore.Cli.Models;
+using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Insomnia;
 using System.Text.Json;
 
@@ -119,7 +119,7 @@ public class InsomniaCollectionMappingHelperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.IsType<List<Explore.Cli.Models.Parameter>>(result);
+        Assert.IsType<List<Explore.Cli.Models.Explore.Parameter>>(result);
         Assert.Equal(4, result.Count);
     }    
 
