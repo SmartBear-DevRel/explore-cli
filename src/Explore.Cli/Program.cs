@@ -365,10 +365,10 @@ internal class Program
             };
 
             var panel = new Panel($"You have [green]{interactionCount} items[/] to import")
-                    {
-                        Width = 100,
-                        Header = new PanelHeader("Pact Data").Centered()
-                    };
+            {
+                Width = 100,
+                Header = new PanelHeader("Pact Data").Centered()
+            };
             AnsiConsole.Write(panel);
             Console.WriteLine("");
 
@@ -377,129 +377,164 @@ internal class Program
                 BaseAddress = new Uri("https://api.explore.swaggerhub.com")
             };
 
-            //iterate over the items and import
-            // if(postmanCollection != null && postmanCollection.Item != null)
+            // Debugging
+            // switch (pactContract)
             // {
-            //     //create an initial space to hold the collection items
-            //     var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{postmanCollection.Info?.Name}[/]"), Width = 100, UseSafeBorder = true };
-            //     resultTable.AddColumn("Result");
-            //     resultTable.AddColumn(new TableColumn("Details").Centered());   
-
-            //     var cleanedCollectionName = UtilityHelper.CleanString(postmanCollection.Info?.Name);
-            //     var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
-
-            //     exploreHttpClient.DefaultRequestHeaders.Clear();
-            //     exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-            //     exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-            //     var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);        
-
-            //     if (spacesResponse.StatusCode == HttpStatusCode.Created)
-            //     {
-            //         var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
-            //         apiImportResults.AddColumn("Result");
-            //         apiImportResults.AddColumn("API Imported");
-            //         apiImportResults.AddColumn("Connection Imported");
-
-            //         //parse the response
-            //         var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
-
-            //         //Postman Items cant contain nested items, so we can flatten the list
-            //         var flattenedItems = PostmanCollectionMappingHelper.FlattenItems(postmanCollection.Item);
-
-            //         foreach(var item in flattenedItems)
-            //         {
-            //             if(item.Request != null)
-            //             {
-            //                 //check if request format is supported
-            //                 if(!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
+            //     case PactV1.Contract:
+            //         Console.WriteLine($"currently unsupported");
+            //         return;
+            //     case PactV3.Contract:
+            //         PactV3.Contract pactV3Contract = pactContract;
+            //         if (pactV3Contract != null && pactV3Contract.Interactions != null){
+            //             var interactions = pactV3Contract.Interactions;
+            //             foreach (var interaction in interactions)
             //                 {
-            //                     apiImportResults.AddRow("[orange3]skipped[/]", $"Item '{item.Name}' skipped", $"Request method not supported");
-            //                     continue;
+            //                     Console.WriteLine(interaction.Request.Body);
             //                 }
-
-            //                 //now let's create an API entry in the space
-            //                 var cleanedAPIName = UtilityHelper.CleanString(item.Name);
-            //                 var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
-
-            //                 exploreHttpClient.DefaultRequestHeaders.Clear();
-            //                 exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-            //                 exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-            //                 var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
-
-            //                 if (apiResponse.StatusCode == HttpStatusCode.Created)
-            //                 {
-            //                     var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
-            //                     var connectionRequestBody = JsonSerializer.Serialize(PostmanCollectionMappingHelper.MapPostmanCollectionItemToExploreConnection(item));
-            //                     var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
-
-            //                     //now let's do the work and import the connection
-            //                     exploreHttpClient.DefaultRequestHeaders.Clear();
-            //                     exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-            //                     exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-            //                     var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
-
-            //                     if (connectionResponse.StatusCode == HttpStatusCode.Created)
-            //                     {
-            //                         apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
-            //                     }
-            //                     else
-            //                     {
-            //                         apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
-            //                     }
-            //                 }
-            //                 else
-            //                 {
-            //                     apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
-            //                 }   
-            //             }
             //         }
-
-
-            //         resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
-
-            //         if (verboseOutput == null || verboseOutput == false)
-            //         {
-            //             AnsiConsole.MarkupLine($"[green]\u2713 [/]{cleanedCollectionName}");
-            //         }                      
-
-            //     }  
-            //     else
-            //     {
-            //         switch (spacesResponse.StatusCode)
-            //         {
-            //             case HttpStatusCode.OK:
-            //                 // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
-            //                 resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
-            //                 AnsiConsole.Write(resultTable);
-            //                 Console.WriteLine("");
-            //                 break;
-
-            //             case HttpStatusCode.Conflict:
-            //                 var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
-            //                 apiImportResults.AddColumn("Result");
-            //                 apiImportResults.AddColumn("API Imported");
-            //                 apiImportResults.AddColumn("Connection Imported");
-            //                 apiImportResults.AddRow("skipped", "", "");
-
-            //                 resultTable.AddRow(new Markup("[orange3]skipped[/]"), apiImportResults);
-            //                 AnsiConsole.Write(resultTable);
-            //                 Console.WriteLine("");
-            //                 break;
-
-            //             default:
-            //                 resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));
-            //                 AnsiConsole.Write(resultTable);
-            //                 Console.WriteLine("");
-            //                 break;
-            //         }
-            //     }
-
-            //     if (verboseOutput != null && verboseOutput == true)
-            //     {
-            //         AnsiConsole.Write(resultTable);
-            //     }                    
-
+            //         break;
+            //     default:
+            //         Console.WriteLine($"currently unsupported");
+            //         return;
             // }
+
+            // iterate over the items and import
+            switch (pactContract)
+            {
+                case PactV1.Contract:
+                    Console.WriteLine($"currently unsupported");
+                    return;
+                case PactV3.Contract:
+                    PactV3.Contract pactV3Contract = pactContract;
+                    ; if (pactV3Contract != null && pactV3Contract.Interactions != null)
+                    {
+                        //create an initial space to hold the collection items
+                        var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{pactV3Contract.Consumer.Name}-{pactV3Contract.Provider.Name}[/]"), Width = 100, UseSafeBorder = true };
+                        resultTable.AddColumn("Result");
+                        resultTable.AddColumn(new TableColumn("Details").Centered());
+
+                        var cleanedCollectionName = UtilityHelper.CleanString($"{pactV3Contract.Consumer.Name}-{pactV3Contract.Provider.Name}");
+                        var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
+
+                        exploreHttpClient.DefaultRequestHeaders.Clear();
+                        exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                        exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                        var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);
+
+                        if (spacesResponse.StatusCode == HttpStatusCode.Created)
+                        {
+                            var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
+                            apiImportResults.AddColumn("Result");
+                            apiImportResults.AddColumn("API Imported");
+                            apiImportResults.AddColumn("Connection Imported");
+
+                            //parse the response
+                            var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
+
+                            //Postman Items cant contain nested items, so we can flatten the list
+                            var interactions = pactV3Contract.Interactions;
+
+                            foreach (var interaction in interactions)
+                            {
+                                // TODO - Determine if message pact, and reject
+                                if (interaction.Request != null)
+                                {
+                                    //check if request format is supported
+                                    // if (!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
+                                    // {
+                                    //     apiImportResults.AddRow("[orange3]skipped[/]", $"Item '{item.Name}' skipped", $"Request method not supported");
+                                    //     continue;
+                                    // }
+
+                                    //now let's create an API entry in the space
+                                    var cleanedAPIName = UtilityHelper.CleanString(interaction.Description.ToString());
+                                    var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from pact file on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
+
+                                    exploreHttpClient.DefaultRequestHeaders.Clear();
+                                    exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                                    exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                                    var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
+
+                                    if (apiResponse.StatusCode == HttpStatusCode.Created)
+                                    {
+                                        var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
+                                        var connectionRequestBody = JsonSerializer.Serialize(PactMappingHelper.MapPactInteractionToExploreConnection(interaction));
+                                        var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
+
+                                        // //now let's do the work and import the connection
+                                        exploreHttpClient.DefaultRequestHeaders.Clear();
+                                        exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                                        exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                                        var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+
+                                        if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                                        {
+                                            apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
+                                        }
+                                        else
+                                        {
+                                            apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+                                    }
+                                }
+                            }
+
+
+                            resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
+
+                            if (verboseOutput == null || verboseOutput == false)
+                            {
+                                AnsiConsole.MarkupLine($"[green]\u2713 [/]{cleanedCollectionName}");
+                            }
+
+                        }
+                        else
+                        {
+                            switch (spacesResponse.StatusCode)
+                            {
+                                case HttpStatusCode.OK:
+                                    // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
+                                    resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
+                                    AnsiConsole.Write(resultTable);
+                                    Console.WriteLine("");
+                                    break;
+
+                                case HttpStatusCode.Conflict:
+                                    var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
+                                    apiImportResults.AddColumn("Result");
+                                    apiImportResults.AddColumn("API Imported");
+                                    apiImportResults.AddColumn("Connection Imported");
+                                    apiImportResults.AddRow("skipped", "", "");
+
+                                    resultTable.AddRow(new Markup("[orange3]skipped[/]"), apiImportResults);
+                                    AnsiConsole.Write(resultTable);
+                                    Console.WriteLine("");
+                                    break;
+
+                                default:
+                                    resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));
+                                    AnsiConsole.Write(resultTable);
+                                    Console.WriteLine("");
+                                    break;
+                            }
+                        }
+
+                        if (verboseOutput != null && verboseOutput == true)
+                        {
+                            AnsiConsole.Write(resultTable);
+                        }
+
+                    }
+
+                    break;
+                default:
+                    Console.WriteLine($"unsupported");
+                    return;
+            };
 
             Console.WriteLine();
             AnsiConsole.MarkupLine($"[green]Import completed[/]");
