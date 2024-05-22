@@ -1,8 +1,6 @@
-namespace Explore.Cli.Models;
-
 using System.Text.Json.Serialization;
 
-
+namespace Explore.Cli.Models.Explore;
 
 public partial class Transaction
 {

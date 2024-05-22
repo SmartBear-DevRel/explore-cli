@@ -1,4 +1,5 @@
-using Explore.Cli.Models;
+using Explore.Cli.Models.Explore;
+using Explore.Cli.Models.Postman;
 using System.Text.Json;
 
 public class PostmanCollectionMappingHelperTests
@@ -82,18 +83,12 @@ public class PostmanCollectionMappingHelperTests
     {
         // Arrange
         var mockCollectionAsJson = "{\r\n\t\"info\": {\r\n\t\t\"_postman_id\": \"d5e3f3a0-5f1e-4b0e-8f2a-2b1b8b7c9b1a\",\r\n\t\t\"name\": \"Explore\",\r\n\t\t\"schema\": \"https://schema.getpostman.com/json/collection/v2.1.0/collection.json\"\r\n\t}\r\n}";
-        //var mockCollectionAsJson2 = "{\r\n\t\"info\": {\r\n\t\t\"_postman_id\": \"d5e3f3a0-5f1e-4b0e-8f2a-2b1b8b7c9b1a\",\r\n\t\t\"name\": \"Explore\",\r\n\t\t\"schema\": \"https://schema.getpostman.com/json/collection/v2.0.0/collection.json\"\r\n\t}\r\n}";
-        //var mockCollectionAsJson3 = "{\r\n\t\"info\": {\r\n\t\t\"_postman_id\": \"d5e3f3a0-5f1e-4b0e-8f2a-2b1b8b7c9b1a\",\r\n\t\t\"name\": \"Explore\",\r\n\t\t\"schema\": \"https://schema.getpostman.com/json/collection/v2.2.0/collection.json\"\r\n\t}\r\n}";
 
         // Act
         var result = PostmanCollectionMappingHelper.IsCollectionVersion2_1(mockCollectionAsJson);
-        //var result2 = PostmanCollectionMappingHelper.IsCollectionVersion2_1(mockCollectionAsJson2);
-        //var result3 = PostmanCollectionMappingHelper.IsCollectionVersion2_1(mockCollectionAsJson3);
 
         // Assert
         Assert.True(result);
-        //Assert.False(result2);
-        //Assert.False(result3);
     }
 
     [Fact]
@@ -113,5 +108,6 @@ public class PostmanCollectionMappingHelperTests
         
         Assert.False(result2);
         Assert.False(result3);
-    }    
+    }   
+
 }

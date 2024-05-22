@@ -3,8 +3,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Explore.Cli.Models;
 using Spectre.Console;
+using Explore.Cli.Models.Explore;
+using Explore.Cli.Models.Postman;
+using Explore.Cli.Models.Insomnia;
 
 internal class Program
 {
@@ -49,11 +51,18 @@ internal class Program
         { await ImportSpaces(ec, fp, v, n); }, exploreCookie, importFilePath, names, verbose);
 
         var importPostmanCollectionCommand = new Command("import-postman-collection") { exploreCookie, importFilePath, verbose };
-        importPostmanCollectionCommand.Description = "Import a Postman collection v2.1 into SwaggerHub Explore";
+        importPostmanCollectionCommand.Description = "Import Postman collection (v2.1) into SwaggerHub Explore";
         rootCommand.Add(importPostmanCollectionCommand);
 
         importPostmanCollectionCommand.SetHandler(async (ec, fp, v) =>
         { await ImportPostmanCollection(ec, fp, v); }, exploreCookie, importFilePath, verbose);
+
+        var importInsomniaCollectionCommand = new Command("import-insomnia-collection") { exploreCookie, importFilePath, verbose };
+        importInsomniaCollectionCommand.Description = "Import Insomnia collection (v4) into SwaggerHub Explore";
+        rootCommand.Add(importInsomniaCollectionCommand);
+
+        importInsomniaCollectionCommand.SetHandler(async (ec, fp, v) =>
+        { await ImportInsomniaCollection(ec, fp, v); }, exploreCookie, importFilePath, verbose);
         
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
@@ -267,6 +276,205 @@ internal class Program
             Console.WriteLine($"An error occurred: {ex.Message}");
         }
 
+    }
+
+    internal static async Task ImportInsomniaCollection(string exploreCookie, string filePath, bool? verboseOutput)
+    {
+        //check file existence and read permissions
+        try
+        {
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                //let's verify it's a JSON file now
+                if (!UtilityHelper.IsJsonFile(filePath))
+                {
+                    AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
+                    return;
+                }
+
+                // You can read from the file if this point is reached
+                AnsiConsole.MarkupLine($"processing ...");
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
+            return;
+        }
+        catch (FileNotFoundException)
+        {
+            AnsiConsole.MarkupLine($"[red]The file {filePath} does not exist. Please review the provided file path.[/]");
+            return;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
+            return;
+        }
+
+        try
+        {
+            string json = File.ReadAllText(filePath);
+
+            if(!InsomniaCollectionMappingHelper.IsCollectionExportVersion4(json))
+            {
+                Console.WriteLine($"The provided JSON does not conform to the expected schema. Errors: Only Insomnia collection exports using `__export_version: 4` are supported at this time.");
+                return;
+            }
+
+            var insomniaCollection = JsonSerializer.Deserialize<InsomniaCollection>(json);
+
+            //validate json against known (high level) schema -- TODO - check if schema exists on web
+
+            var panel = new Panel($"You have [green]{insomniaCollection!.Resources!.Where(r => string.Equals(r.Type, "request", StringComparison.OrdinalIgnoreCase)).Count()} items[/] to import")
+            {
+                Width = 100,
+                Header = new PanelHeader("Insomnia Collection Data").Centered()
+            };
+            AnsiConsole.Write(panel);
+            Console.WriteLine("");
+
+            var exploreHttpClient = new HttpClient
+            {
+                BaseAddress = new Uri("https://api.explore.swaggerhub.com")
+            };
+
+            //iterate over the items and import
+            if(insomniaCollection != null && insomniaCollection.Resources != null)
+            {
+                //get the workspace resource which contains the collection name
+                var collectionResource = insomniaCollection.Resources.FirstOrDefault(r => string.Equals(r.Type, "workspace", StringComparison.OrdinalIgnoreCase) && string.Equals(r.Scope, "collection", StringComparison.OrdinalIgnoreCase));
+
+                //create an initial space to hold the collection items
+                var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{collectionResource?.Name}[/]"), Width = 100, UseSafeBorder = true };
+                resultTable.AddColumn("Result");
+                resultTable.AddColumn(new TableColumn("Details").Centered());   
+
+                var cleanedCollectionName = UtilityHelper.CleanString(collectionResource?.Name);
+                var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
+
+                exploreHttpClient.DefaultRequestHeaders.Clear();
+                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent); 
+
+                if (spacesResponse.StatusCode == HttpStatusCode.Created)
+                {
+                    var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
+                    apiImportResults.AddColumn("Result");
+                    apiImportResults.AddColumn("API Imported");
+                    apiImportResults.AddColumn("Connection Imported");
+
+                    //parse the response
+                    var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
+
+                    //separate requests and environment resources
+                    var requestResources = insomniaCollection.Resources.Where(r => string.Equals(r.Type, "request", StringComparison.OrdinalIgnoreCase)).ToList();
+                    var environmentResources = insomniaCollection.Resources.Where(r => string.Equals(r.Type, "environment", StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    foreach(var resource in requestResources)
+                    {
+                        if(!InsomniaCollectionMappingHelper.IsItemRequestModeSupported(resource))
+                        {
+                            apiImportResults.AddRow("[orange3]skipped[/]", $"Resource '{resource.Name}' skipped", $"Request Method or MimeType not supported");
+                            continue;
+                        }
+
+                        //now let's create an API entry in the space
+                        var cleanedAPIName = UtilityHelper.CleanString(resource.Name);
+                        var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from Insomnia on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
+
+                        exploreHttpClient.DefaultRequestHeaders.Clear();
+                        exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                        exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                        var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
+
+                        if (apiResponse.StatusCode == HttpStatusCode.Created)
+                        {
+                            var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
+                            var connectionRequestBody = JsonSerializer.Serialize(InsomniaCollectionMappingHelper.MapInsomniaRequestResourceToExploreConnection(resource, environmentResources));
+                            var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
+                            //Console.WriteLine($"Connection Request Body for {resource.Name}: {connectionRequestBody}");
+
+                            //now let's do the work and import the connection
+                            exploreHttpClient.DefaultRequestHeaders.Clear();
+                            exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+                            exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+                            var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+
+                            if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                            {
+                                apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
+                            }
+                            else
+                            {
+                                apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
+                            }
+                        }
+                        else
+                        {
+                            apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+                        } 
+                    }
+
+
+                    resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
+
+                    if (verboseOutput == null || verboseOutput == false)
+                    {
+                        AnsiConsole.MarkupLine($"[green]\u2713 [/]{cleanedCollectionName}");
+                    }                      
+                    
+                }  
+                else
+                {
+                    switch (spacesResponse.StatusCode)
+                    {
+                        case HttpStatusCode.OK:
+                            // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
+                            AnsiConsole.Write(resultTable);
+                            Console.WriteLine("");
+                            break;
+
+                        case HttpStatusCode.Conflict:
+                            var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
+                            apiImportResults.AddColumn("Result");
+                            apiImportResults.AddColumn("API Imported");
+                            apiImportResults.AddColumn("Connection Imported");
+                            apiImportResults.AddRow("skipped", "", "");
+
+                            resultTable.AddRow(new Markup("[orange3]skipped[/]"), apiImportResults);
+                            AnsiConsole.Write(resultTable);
+                            Console.WriteLine("");
+                            break;
+
+                        default:
+                            var content = await spacesResponse.Content.ReadAsStringAsync();
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase} + {content}[/]"));
+                            AnsiConsole.Write(resultTable);
+                            Console.WriteLine("");
+                            break;
+                    }
+                }
+
+                if (verboseOutput != null && verboseOutput == true)
+                {
+                    AnsiConsole.Write(resultTable);
+                }                 
+            }
+
+            Console.WriteLine();
+            AnsiConsole.MarkupLine($"[green]Import completed[/]");              
+        }   
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine("File not found.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }     
     }
 
     internal static async Task ExportSpaces(string exploreCookie, string filePath, string exportFileName, string names, bool? verboseOutput)

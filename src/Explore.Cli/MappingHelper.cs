@@ -1,4 +1,4 @@
-using Explore.Cli.Models;
+using Explore.Cli.Models.Explore;
 
 public static class MappingHelper
 {

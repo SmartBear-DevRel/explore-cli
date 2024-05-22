@@ -1,7 +1,6 @@
-using System.Net.NetworkInformation;
 using System.Text.Json;
-using Explore.Cli.Models;
-using Namotion.Reflection;
+using Explore.Cli.Models.Explore;
+using Explore.Cli.Models.Postman;
 
 public static class PostmanCollectionMappingHelper
 {

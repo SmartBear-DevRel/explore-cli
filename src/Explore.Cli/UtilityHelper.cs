@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.StaticFiles;
 using NJsonSchema;
 using Spectre.Console;
+using Explore.Cli.Models;
 
 public static class UtilityHelper
 {
@@ -1470,4 +1471,15 @@ public static class UtilityHelper
         var xsrfComponent = cookieComponents.FirstOrDefault(x => x.Trim().ToUpperInvariant().StartsWith("XSRF-TOKEN"));
         return xsrfComponent?.Split("=")[1];
     }
+
+    public static int IndexOfNth(string str, char value, int nth)
+    {
+        int index = -1;
+        for (int i = 0; i < nth; i++)
+        {
+            index = str.IndexOf(value, index + 1);
+            if (index == -1) break;
+        }
+        return index;
+    }    
 }

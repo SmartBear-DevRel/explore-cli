@@ -1,4 +1,4 @@
-using Explore.Cli.Models;
+using Explore.Cli.Models.Explore;
 
 namespace Explore.Cli.Tests;
 

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
-using Explore.Cli.Models;
+
+namespace Explore.Cli.Models.Explore;
 
 public partial class ExportSpaces
 {
