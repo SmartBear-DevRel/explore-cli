@@ -48,8 +48,9 @@ public static class PactMappingHelper
                         var version = pactSpecification["version"].ToString();
                         var validVersions = new List<string> { "1.0.0", "2.0.0", "3.0.0", "4.0.0" };
                         if (version != null && validVersions.Contains(version))
-                        {
-                            return $"pact-v{version}";
+                        {   
+                            var formattedVersion = version.Split('.')[0];
+                            return $"pact-v{formattedVersion}";
                         }
                     }
                 }

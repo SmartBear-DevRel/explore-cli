@@ -54,6 +54,13 @@ internal class Program
 
         importPostmanCollectionCommand.SetHandler(async (ec, fp, v) =>
         { await ImportPostmanCollection(ec, fp, v); }, exploreCookie, importFilePath, verbose);
+
+        var importPactFileCommand = new Command("import-pact-file") { exploreCookie, importFilePath, verbose };
+        importPactFileCommand.Description = "Import a Pact file into SwaggerHub Explore";
+        rootCommand.Add(importPactFileCommand);
+
+        importPactFileCommand.SetHandler(async (ec, fp, v) =>
+        { await ImportPactFile(ec, fp, v); }, exploreCookie, importFilePath, verbose);
         
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
@@ -252,6 +259,222 @@ internal class Program
                 }                    
 
             }
+
+            Console.WriteLine();
+            AnsiConsole.MarkupLine($"[green]Import completed[/]");            
+            
+            //ToDo - deal with scenario of item-groups
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine("File not found.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
+
+    }
+    internal static async Task ImportPactFile(string exploreCookie, string filePath, bool? verboseOutput)
+    {
+        //check file existence and read permissions
+        try
+        {
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                //let's verify it's a JSON file now
+                if (!UtilityHelper.IsJsonFile(filePath))
+                {
+                    AnsiConsole.MarkupLine($"[red]The file provided is not a JSON file. Please review.[/]");
+                    return;
+                }
+
+                // You can read from the file if this point is reached
+                AnsiConsole.MarkupLine($"processing ...");
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            AnsiConsole.MarkupLine($"[red]Access to {filePath} is denied. Please review file permissions any try again.[/]");
+            return;
+        }
+        catch (FileNotFoundException)
+        {
+            AnsiConsole.MarkupLine($"[red]The file {filePath} does not exist. Please review the provided file path.[/]");
+            return;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]An error occurred accessing the file: {ex.Message}[/]");
+            return;
+        }
+
+        try 
+        {
+            //validate collection against postman collection schema
+            Console.WriteLine($"Reading file");
+            string json = File.ReadAllText(filePath);
+
+            if(!PactMappingHelper.hasPactVersion(json))
+            {
+                Console.WriteLine($"Cannot determine pact specification version");
+                return;
+            }
+            Console.WriteLine($"has pact version");
+
+            var pactSpecVersion = PactMappingHelper.getPactVersion(json);
+            Console.WriteLine(pactSpecVersion);
+            Console.WriteLine(json);
+            var pactCoordinate = JsonSerializer.Deserialize<PactV3Contract.Coordinate>(json);
+            Console.WriteLine(pactCoordinate.Consumer.ToString());
+            Console.WriteLine(pactSpecVersion);
+
+            //validate json against known (high level) schema
+            var validationResult = await UtilityHelper.ValidateSchema(json, pactSpecVersion);
+
+            if (!validationResult.isValid)
+            {
+                Console.WriteLine($"The provided pact file does not conform to the expected schema. Errors: {validationResult.Message}");
+                return;
+            }
+
+            // var panel = new Panel($"You have [green]pact items[/] to import")
+            var panel = new Panel($"You have [green]{pactCoordinate} items[/] to import")
+            {
+                Width = 100,
+                Header = new PanelHeader("Pact Data").Centered()
+            };
+            AnsiConsole.Write(panel);
+            Console.WriteLine("");
+
+            var exploreHttpClient = new HttpClient
+            {
+                BaseAddress = new Uri("https://api.explore.swaggerhub.com")
+            };
+            
+            //iterate over the items and import
+            // if(postmanCollection != null && postmanCollection.Item != null)
+            // {
+            //     //create an initial space to hold the collection items
+            //     var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{postmanCollection.Info?.Name}[/]"), Width = 100, UseSafeBorder = true };
+            //     resultTable.AddColumn("Result");
+            //     resultTable.AddColumn(new TableColumn("Details").Centered());   
+
+            //     var cleanedCollectionName = UtilityHelper.CleanString(postmanCollection.Info?.Name);
+            //     var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
+
+            //     exploreHttpClient.DefaultRequestHeaders.Clear();
+            //     exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+            //     exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+            //     var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);        
+
+            //     if (spacesResponse.StatusCode == HttpStatusCode.Created)
+            //     {
+            //         var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
+            //         apiImportResults.AddColumn("Result");
+            //         apiImportResults.AddColumn("API Imported");
+            //         apiImportResults.AddColumn("Connection Imported");
+
+            //         //parse the response
+            //         var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
+
+            //         //Postman Items cant contain nested items, so we can flatten the list
+            //         var flattenedItems = PostmanCollectionMappingHelper.FlattenItems(postmanCollection.Item);
+                    
+            //         foreach(var item in flattenedItems)
+            //         {
+            //             if(item.Request != null)
+            //             {
+            //                 //check if request format is supported
+            //                 if(!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
+            //                 {
+            //                     apiImportResults.AddRow("[orange3]skipped[/]", $"Item '{item.Name}' skipped", $"Request method not supported");
+            //                     continue;
+            //                 }
+                            
+            //                 //now let's create an API entry in the space
+            //                 var cleanedAPIName = UtilityHelper.CleanString(item.Name);
+            //                 var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
+
+            //                 exploreHttpClient.DefaultRequestHeaders.Clear();
+            //                 exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+            //                 exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+            //                 var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
+
+            //                 if (apiResponse.StatusCode == HttpStatusCode.Created)
+            //                 {
+            //                     var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
+            //                     var connectionRequestBody = JsonSerializer.Serialize(PostmanCollectionMappingHelper.MapPostmanCollectionItemToExploreConnection(item));
+            //                     var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
+
+            //                     //now let's do the work and import the connection
+            //                     exploreHttpClient.DefaultRequestHeaders.Clear();
+            //                     exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+            //                     exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
+            //                     var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+
+            //                     if (connectionResponse.StatusCode == HttpStatusCode.Created)
+            //                     {
+            //                         apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
+            //                     }
+            //                     else
+            //                     {
+            //                         apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
+            //                     }
+            //                 }
+            //                 else
+            //                 {
+            //                     apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+            //                 }   
+            //             }
+            //         }
+
+
+            //         resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
+
+            //         if (verboseOutput == null || verboseOutput == false)
+            //         {
+            //             AnsiConsole.MarkupLine($"[green]\u2713 [/]{cleanedCollectionName}");
+            //         }                      
+                    
+            //     }  
+            //     else
+            //     {
+            //         switch (spacesResponse.StatusCode)
+            //         {
+            //             case HttpStatusCode.OK:
+            //                 // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
+            //                 resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
+            //                 AnsiConsole.Write(resultTable);
+            //                 Console.WriteLine("");
+            //                 break;
+
+            //             case HttpStatusCode.Conflict:
+            //                 var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
+            //                 apiImportResults.AddColumn("Result");
+            //                 apiImportResults.AddColumn("API Imported");
+            //                 apiImportResults.AddColumn("Connection Imported");
+            //                 apiImportResults.AddRow("skipped", "", "");
+
+            //                 resultTable.AddRow(new Markup("[orange3]skipped[/]"), apiImportResults);
+            //                 AnsiConsole.Write(resultTable);
+            //                 Console.WriteLine("");
+            //                 break;
+
+            //             default:
+            //                 resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));
+            //                 AnsiConsole.Write(resultTable);
+            //                 Console.WriteLine("");
+            //                 break;
+            //         }
+            //     }
+
+            //     if (verboseOutput != null && verboseOutput == true)
+            //     {
+            //         AnsiConsole.Write(resultTable);
+            //     }                    
+
+            // }
 
             Console.WriteLine();
             AnsiConsole.MarkupLine($"[green]Import completed[/]");            
