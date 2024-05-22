@@ -36,9 +36,41 @@ You will need the following:
 
 ### Install the CLI
 
+#### Nuget
+
 Download and install the CLI tool from Nuget: https://www.nuget.org/packages/Explore.Cli
 
 `dotnet tool install --global Explore.Cli`
+
+#### GitHub Releases
+
+Standalone releases of the Explore.CLI tool are published to GitHub Releases.
+
+##### Supported Platforms
+
+| OS      | Architecture | Supported  |
+| ------- | ------------ | ---------  |
+| OSX     | x86_64       | ✅         |
+| Linux   | x86_64       | ✅         |
+| Windows | x86_64       | ✅         |
+| OSX     | arm64        | ✅         |
+| Linux   | arm64        | ✅         |
+| Windows | arm64        | ✅         |
+| Alpine  | x86_64       | ✅         |
+| Alpine  | arm64        | ✅         | 
+
+###### Pre-requisites
+
+- `libicu` - Linux musl and glibc based systems
+- `gcc` - Linux musl based systems
+
+###### Alpine
+
+`apk add -y gcc icu`
+
+###### Debian
+
+`apt update && apt install -y libicu`
 
 ### Session Cookies for CLI command
 
