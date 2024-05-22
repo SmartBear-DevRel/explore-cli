@@ -30,7 +30,7 @@ jobs:
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v0.10.2
         with:
-          versionSpec: '5.x'          
+          versionSpec: '5.x'
           
       # check out code
       - name: 'Checkout code'

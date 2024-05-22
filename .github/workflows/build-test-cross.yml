@@ -1,0 +1,134 @@
+name: cross compile dotnet app
+on:
+  # release:
+  #   types:
+  #     - published
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+    build:
+      runs-on: ubuntu-latest
+      steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 7.x
+      - name: build dotnet executables
+        run: make build
+      - name: size of executables
+        run: make size
+      - name: file info
+        run: make file
+      - name: prep for distribution
+        run: make dist
+      - uses: actions/upload-artifact@v4
+        with:
+          path: dist/*
+
+    test:
+      defaults:
+        run:
+          shell: sh
+      needs: [build]
+      name: Test ${{ matrix.docker == true && matrix.alpine == true && 'linux-musl' || matrix.docker == true && matrix.alpine == false && 'linux' || matrix.os }}-${{ matrix.arch }}
+      strategy:
+        fail-fast: false
+        matrix:
+          os: [
+            "macos-14",
+            "windows-latest",
+            "ubuntu-latest"
+          ]
+          arch: ["amd64"]
+          alpine: [false]
+          include:
+            - os: "macos-14"
+              arch: "arm64"
+            - os: "ubuntu-latest"
+              arch: "arm64"
+              alpine: true
+              docker: true
+            - os: "ubuntu-latest"
+              arch: "amd64"
+              alpine: true
+              docker: true
+            - os: "ubuntu-latest"
+              arch: "arm64"
+              debian: true
+              docker: true
+      runs-on: ${{ matrix.os }}
+      steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v4
+      - name: list and unpack artifacts
+        run: |
+          ls artifact/*
+          cd artifact && gunzip *.gz && cd ..
+          ls artifact/*
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64' && matrix.docker == true
+        uses: docker/setup-qemu-action@v3
+      - name: test alpine ${{ matrix.arch }} package
+        if: ${{ matrix.alpine == true && matrix.arch == 'arm64' }}
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v $(pwd):/app alpine /bin/sh -c 'apk add --no-cache gcc icu && chmod +x ./app/artifact/explore-cli-linux-musl-arm64 && ./app/artifact/explore-cli-linux-musl-arm64 --version'
+      - name: test alpine ${{ matrix.arch }} package
+        if: ${{ matrix.alpine == true && matrix.arch == 'amd64' }}
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v $(pwd):/app alpine /bin/sh -c 'apk add --no-cache gcc icu && chmod +x ./app/artifact/explore-cli-linux-musl-x64 && ./app/artifact/explore-cli-linux-musl-x64 --version'
+      - name: test debian ${{ matrix.arch }} package
+        if: ${{ matrix.debian == true && matrix.arch == 'arm64' }}
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v $(pwd):/app debian /bin/bash -c 'apt update && apt install -y libicu-dev && chmod +x ./app/artifact/explore-cli-linux-arm64 && ./app/artifact/explore-cli-linux-arm64 --version'
+      - name: test debian ${{ matrix.arch }} package
+        if: ${{ matrix.debian == true && matrix.arch == 'amd64' }}
+        run: docker run --platform=linux/${{ matrix.arch }} --rm -v $(pwd):/app debian /bin/bash -c 'apt update && apt install -y libicu-dev && chmod +x ./app/artifact/explore-cli-linux-x64 && ./app/artifact/explore-cli-linux-x64 --version'
+      - name: test 'macos-14-arm'
+        if: ${{ matrix.os == 'macos-14' && matrix.arch == 'arm64' }}
+        run: chmod +x artifact/explore-cli-osx-arm64 && artifact/explore-cli-osx-arm64 --version
+      - name: test 'macos-14-amd'
+        if: ${{ matrix.os == 'macos-14' && matrix.arch == 'amd64' }}
+        run: chmod +x artifact/explore-cli-osx-x64 && artifact/explore-cli-osx-x64 --version
+      - name: test 'windows-latest'
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: artifact/explore-cli-win-x64.exe --version
+      - name: test 'ubuntu-latest'
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.docker != true }}
+        run: chmod +x artifact/explore-cli-linux-x64 && artifact/explore-cli-linux-x64 --version
+
+    publish:
+      runs-on: ubuntu-latest
+      if: github.event_name == 'workflow_dispatch'
+      # if: |
+      #   startsWith(github.ref, 'refs/tags/v')
+      needs: [build,test]
+
+      steps:
+        - name: Install GitVersion
+          uses: gittools/actions/gitversion/setup@v0.10.2
+          with:
+            versionSpec: '5.x'
+        - name: checkout
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Determine Version
+          id: gitVersion
+          uses: gittools/actions/gitversion/execute@v0.10.2
+          with:
+            useConfigFile: true
+            configFilePath: ./.github/gitversion.yml
+        - name: Download artifacts
+          uses: actions/download-artifact@v4
+
+        - name: Upload Release Assets
+          uses: svenstaro/upload-release-action@v2
+          with:
+            repo_token: ${{ secrets.GITHUB_TOKEN }}
+            file: artifact/*
+            file_glob: true
+            tag: ${{ steps.gitversion.outputs.MajorMinorPatch }}
