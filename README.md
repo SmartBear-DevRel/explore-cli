@@ -73,6 +73,53 @@ Standalone releases of the Explore.CLI tool are published to GitHub Releases.
 
 `apt update && apt install -y libicu-dev`
 
+#### Docker
+
+Dockerfiles are provided for amd64 & arm64 flavours
+
+- Alpine
+  - `./Dockerfile.alpine`
+- Debian
+  - `./Dockerfile.debian`
+
+##### Building images
+
+```sh
+docker build . --platform=linux/arm64 -f Dockerfile.debian  -t explore-cli:debian-arm64
+docker build . --platform=linux/arm64 -f Dockerfile.debian  -t explore-cli:debian-amd64
+docker build . --platform=linux/arm64 -f Dockerfile.alpine  -t explore-cli:alpine-arm64
+docker build . --platform=linux/arm64 -f Dockerfile.alpine  -t explore-cli:alpine-amd64
+```
+
+##### Using images
+
+The `entrypoint` is the `explore-cli` application.
+
+Set environment variables in your shell
+
+```sh
+export EXPLORE_SESSION_TOKEN=<SESSION_TOKEN>
+export EXPLORE_XSRF_TOKEN=<XSRF-TOKEN>
+```
+
+Run your created docker image, with your required explore-cli command.
+
+In our example we are using `import-spaces` which we have in our local directory under the `spaces` folder.
+
+The `spaces` folder is volume mounted into our container in `/spaces`, and commands to file paths should 
+reference this folder.
+
+```sh
+docker run --platform=linux/amd64 \
+  --rm \
+  -it \
+  -v $PWD/spaces:/spaces \
+  explore-cli:debian \
+  import-spaces \
+  --explore-cookie "SESSION=${EXPLORE_SESSION_TOKEN}; XSRF-TOKEN=${EXPLORE_XSRF_TOKEN}" \
+  -fp /spaces/explore_demo_spaces.json
+```
+
 ### Session Cookies for CLI command
 
 You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands.
