@@ -8,7 +8,7 @@ RIDS = "linux-x64" "linux-arm64" "linux-musl-x64" "linux-musl-arm64" "osx-x64" "
 build: clean
 	for rid in $(RIDS); do \
 		echo "Building for $$rid..."; \
-		dotnet publish -c Release -p:PublishSingleFile=true -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishTrimmed=true -p:StaticLink=true -r $$rid -o bin/$(APP_NAME)-$$rid; \
+		dotnet publish -c Release -p:PublishSingleFile=true -p:SelfContained=true -p:PublishReadyToRun=true -p:StaticLink=true -r $$rid -o bin/$(APP_NAME)-$$rid; \
 	done || true
 
 # the above true condition is a yak shave, 
