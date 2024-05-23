@@ -71,7 +71,7 @@ Standalone releases of the Explore.CLI tool are published to GitHub Releases.
 
 ###### Debian
 
-`apt update && apt install -y libicu`
+`apt update && apt install -y libicu-dev`
 
 ### Session Cookies for CLI command
 
