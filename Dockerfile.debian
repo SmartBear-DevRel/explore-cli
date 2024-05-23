@@ -1,0 +1,17 @@
+FROM debian:12-slim
+RUN apt update && apt install -y curl libicu-dev
+
+RUN if [ "$(uname -m)" = "aarch64" ]; then \
+        export BINARY_ARCH=arm64; \
+    elif [ "$(uname -m)" = "x86_64" ]; then  \
+        export BINARY_ARCH=x64; \
+    else \
+        echo unsupported arch "$(uname -m)"; \
+        exit 1; \
+    fi && \
+    curl -LO https://github.com/smartbear-devrel/explore-cli/releases/download/0.6.0/explore-cli-linux-$BINARY_ARCH.gz && \
+    gunzip explore-cli-linux-$BINARY_ARCH.gz && \
+    chmod +x explore-cli-linux-$BINARY_ARCH && \
+    mv explore-cli-linux-$BINARY_ARCH /usr/local/bin/explore-cli && \
+    rm -rf explore-cli-linux-$BINARY_ARCH.gz
+ENTRYPOINT [ "explore-cli" ]
