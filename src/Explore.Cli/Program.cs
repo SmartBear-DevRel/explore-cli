@@ -180,7 +180,7 @@ internal class Program
                             
                             //now let's create an API entry in the space
                             var cleanedAPIName = UtilityHelper.CleanString(item.Name);
-                            var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
+                            var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"{item.Request.Description?.Content + "\n" }imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
 
                             exploreHttpClient.DefaultRequestHeaders.Clear();
                             exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);

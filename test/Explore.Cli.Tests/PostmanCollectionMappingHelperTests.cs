@@ -90,7 +90,6 @@ public class PostmanCollectionMappingHelperTests
         // Assert
         Assert.True(result);
     }
-
     [Fact]
     public void IsCollectionVersion2_1_ShouldReturnFalse()
     {
@@ -110,4 +109,16 @@ public class PostmanCollectionMappingHelperTests
         Assert.False(result3);
     }   
 
+    [Fact]
+    public void ProcessesDescriptions()
+    {
+        // Arrange
+        var filePath = "../../../fixtures/API_.documentation_postman_collection.json";
+        var mockCollectionAsJson = File.ReadAllText(filePath);
+        var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(mockCollectionAsJson);
+        // Act
+        Assert.Equal("Get authenticated user", postmanCollection.Item[0].ItemList[0].Name);
+        Assert.Equal("GET", postmanCollection.Item[0].ItemList[0].Request?.Method?.ToString());
+        Assert.Equal("Gets information about the authenticated user.", postmanCollection.Item[0].ItemList[0].Request?.Description.Content.ToString());
+    }
 }
