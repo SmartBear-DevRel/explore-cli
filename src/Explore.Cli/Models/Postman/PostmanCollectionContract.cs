@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Explore.Cli.Models.Postman;
@@ -27,7 +28,8 @@ public partial class PostmanCollectionInfo
     public string? Version { get; set; }
 
     [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonConverter(typeof(DescriptionConverter))]
+    public Description? Description { get; set; }
 }
 
 public class Item
@@ -39,7 +41,8 @@ public class Item
     public string? Name { get; set; }
 
     [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonConverter(typeof(DescriptionConverter))]
+    public Description? Description { get; set; }
 
     [JsonPropertyName("request")]
     public Request? Request { get; set; }
@@ -64,6 +67,7 @@ public class Request
     public Url? Url { get; set; }
 
     [JsonPropertyName("description")]
+    [JsonConverter(typeof(DescriptionConverter))]
     public Description? Description { get; set; }
 }
 
@@ -76,7 +80,8 @@ public class Header
     public string? Value { get; set; }
 
     [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonConverter(typeof(DescriptionConverter))]
+    public Description? Description { get; set; }
 }
 
 public class Body
@@ -109,7 +114,8 @@ public class Formdata
     public string? Type { get; set; }
 
     [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonConverter(typeof(DescriptionConverter))]
+    public Description? Description { get; set; }
 }
 
 public class Urlencoded
@@ -121,7 +127,8 @@ public class Urlencoded
     public string? Value { get; set; }
 
     [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonConverter(typeof(DescriptionConverter))]
+    public Description? Description { get; set; }
 }
 
 public class Graphql
@@ -165,12 +172,50 @@ public class Query
     [JsonPropertyName("value")]
     public string? Value { get; set; }
 }
-
 public class Description
 {
-    [JsonPropertyName("content")]
     public string? Content { get; set; }
-
-    [JsonPropertyName("type")]
     public string? Type { get; set; }
+    public string? Version { get; set; }
+}
+
+public class DescriptionConverter : JsonConverter<Description>
+{
+    public override Description? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            return new Description { Content = reader.GetString() };
+        }
+        else if (reader.TokenType == JsonTokenType.StartObject)
+        {
+            var description = JsonSerializer.Deserialize<Description>(ref reader, options);
+            return description;
+        }
+        else if (reader.TokenType == JsonTokenType.Null)
+        {
+            return null;
+        }
+        throw new JsonException("Invalid JSON for Description");
+    }
+
+    public override void Write(Utf8JsonWriter writer, Description value, JsonSerializerOptions options)
+    {
+        if (value == null)
+        {
+            writer.WriteNullValue();
+        }
+        else if (value.Content == null)
+        {
+            writer.WriteStringValue(value.Content);
+        }
+        else
+        {
+            writer.WriteStartObject();
+            writer.WriteString("content", value.Content);
+            writer.WriteString("type", value.Type);
+            writer.WriteString("version", value.Version);
+            writer.WriteEndObject();
+        }
+    }
 }
