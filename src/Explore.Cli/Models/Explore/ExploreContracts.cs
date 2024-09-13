@@ -252,8 +252,6 @@ public class SpaceRequest
         [JsonPropertyName("self")]
         public Apis? Self { get; set; }
 
-        [JsonPropertyName("apis")]
-        public Apis? Apis { get; set; }
     }
 
     public partial class Apis
