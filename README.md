@@ -29,6 +29,8 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 >  `import-postman-collection`     Import Postman Collection (v2.1) from a file into SwaggerHub Explore
 >
 >  `import-insomnia-collection`     Import Insomnia Collection (v4) from a file into SwaggerHub Explore
+>
+>  `import-pact-file`               Import a Pact file (v2/v3/v4) into SwaggerHub Explore (HTTP interactions only)  
 
 ### Prerequisites
 You will need the following:
@@ -294,6 +296,46 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 > - Environments variables are inlined and set within the Explore Space
 > - Authorization - only Basic and Bearer Token variants are supported
 
+
+### Running the `import-pact-file` command
+
+**Command Options**
+```
+  _____                  _                              ____   _   _
+ | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
+ |  _|   \ \/ / | '_ \  | |  / _ \  | '__|  / _ \     | |     | | | |
+ | |___   >  <  | |_) | | | | (_) | | |    |  __/  _  | |___  | | | |
+ |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
+                |_|
+```
+**Description:**
+  > Import a Pact file (v2/v3/v4) into SwaggerHub Explore (HTTP interactions only)
+
+**Usage:**
+  > Explore.CLI import-pact-file [options]
+
+**Options:**
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+
+  > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the Insomnia collection
+
+  > `-b`, `--base-uri` <base-uri>                         The base url to use for all imported files
+
+  > `-v`, `--verbose`                                      Include verbose output during processing
+
+  > `-?`, `-h`, `--help`                                   Show help and usage information
+
+**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+
+>Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
+
+> **Notes:**
+> - Compatible with valid Pact v2 / v3 / v4 specification files
+> - Users are advised to provide the base url when importing pact files with `--base-uri` / `-b`, to the required server you wish to explore.
+> Pact files do not contain this information
+> - Currently only supports HTTP interactions.
+>   - V3 message based pacts are unsupported
+>   - V4 interactions other than synchronous/http will be ignored
 
 ## More Information on SwaggerHub Explore
       

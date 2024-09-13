@@ -1,0 +1,154 @@
+{
+    "consumer": {
+      "name": "swaggerhub-pactflow-consumer-codegen"
+    },
+    "interactions": [
+      {
+        "description": "a request to get a product",
+        "providerStates": [
+          {
+            "name": "a product with ID 10 exists"
+          }
+        ],
+        "request": {
+          "method": "GET",
+          "path": "/product/10"
+        },
+        "response": {
+          "body": {
+            "id": "10",
+            "name": "28 Degrees",
+            "type": "CREDIT_CARD"
+          },
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "matchingRules": {
+            "body": {
+              "$": {
+                "combine": "AND",
+                "matchers": [
+                  {
+                    "match": "type"
+                  }
+                ]
+              }
+            },
+            "header": {}
+          },
+          "status": 200
+        }
+      },
+      {
+        "description": "a request for to create product 1234",
+        "providerStates": [
+          {
+            "name": "a product with id 1234 does not exist"
+          }
+        ],
+        "request": {
+          "body": {
+            "id": "1234",
+            "name": "burger",
+            "price": 42,
+            "type": "food"
+          },
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "matchingRules": {
+            "body": {
+              "$": {
+                "combine": "AND",
+                "matchers": [
+                  {
+                    "match": "type"
+                  }
+                ]
+              }
+            }
+          },
+          "method": "POST",
+          "path": "/products"
+        },
+        "response": {
+          "body": {
+            "id": "1234",
+            "name": "burger",
+            "price": 42,
+            "type": "food"
+          },
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "matchingRules": {
+            "body": {
+              "$": {
+                "combine": "AND",
+                "matchers": [
+                  {
+                    "match": "type"
+                  }
+                ]
+              }
+            },
+            "header": {}
+          },
+          "status": 200
+        }
+      },
+      {
+        "description": "a request to get all products",
+        "providerStates": [
+          {
+            "name": "products exist"
+          }
+        ],
+        "request": {
+          "method": "GET",
+          "path": "/products"
+        },
+        "response": {
+          "body": [
+            {
+              "id": "10",
+              "name": "28 Degrees",
+              "type": "CREDIT_CARD"
+            }
+          ],
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "matchingRules": {
+            "body": {
+              "$": {
+                "combine": "AND",
+                "matchers": [
+                  {
+                    "match": "type"
+                  }
+                ]
+              }
+            },
+            "header": {}
+          },
+          "status": 200
+        }
+      }
+    ],
+    "metadata": {
+      "pact-js": {
+        "version": "10.1.4"
+      },
+      "pactRust": {
+        "ffi": "0.3.12",
+        "models": "0.4.5"
+      },
+      "pactSpecification": {
+        "version": "3.0.0"
+      }
+    },
+    "provider": {
+      "name": "swaggerhub-pactflow-provider"
+    }
+  }
