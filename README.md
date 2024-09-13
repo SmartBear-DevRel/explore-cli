@@ -1,6 +1,8 @@
 # explore-cli
+
 Simple utility CLI for importing data into SwaggerHub Explore.
 
+![Can I Deploy](https://smartbear.pactflow.io/pacticipants/explore-cli/branches/main/latest-version/can-i-deploy/to-environment/production/badge)
 
 ```
   _____                  _                              ____   _   _
