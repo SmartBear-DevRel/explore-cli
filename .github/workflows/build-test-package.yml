@@ -65,6 +65,19 @@ jobs:
           dotnet test
         working-directory: test/Explore.Cli.Tests
 
+      - uses: pactflow/actions/publish-pact-files@auto_detect_version_branch
+        with:
+          pactfiles: test/Explore.Cli.Tests/pacts
+          broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
+          token: ${{ secrets.PACT_BROKER_TOKEN }}
+
+      - uses: pactflow/actions/can-i-deploy@auto_detect_version_branch
+        with:
+          to_environment: production
+          application_name: explore-cli
+          broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
+          token: ${{ secrets.PACT_BROKER_TOKEN }}
+
       - name: Create Package
         run: dotnet pack --configuration $BUILD_CONFIG -o:package /p:PackageVersion=${{ steps.gitVersion.outputs.assemblySemVer }}
         working-directory: src/Explore.Cli

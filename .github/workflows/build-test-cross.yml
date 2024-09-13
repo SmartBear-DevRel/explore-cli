@@ -122,6 +122,13 @@ jobs:
           with:
             useConfigFile: true
             configFilePath: ./.github/gitversion.yml
+
+        - uses: pactflow/actions/can-i-deploy@auto_detect_version_branch
+          with:
+            to_environment: production
+            application_name: explore-cli
+            broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
+            token: ${{ secrets.PACT_BROKER_TOKEN }}
         - name: Download artifacts
           uses: actions/download-artifact@v4
 
@@ -132,3 +139,10 @@ jobs:
             file: artifact/*
             file_glob: true
             tag: ${{ steps.gitversion.outputs.MajorMinorPatch }}
+
+        - uses: pactflow/actions/record-release@auto_detect_version_branch
+          with:
+            environment: production
+            application_name: explore-cli
+            PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+            PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
