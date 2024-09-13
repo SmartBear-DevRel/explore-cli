@@ -399,3 +399,4 @@ FodyWeavers.xsd
 
 # distribution artifacts
 /dist
+pacts/
