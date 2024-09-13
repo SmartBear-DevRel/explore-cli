@@ -123,7 +123,7 @@ jobs:
             useConfigFile: true
             configFilePath: ./.github/gitversion.yml
 
-        - uses: pactflow/actions/can-i-deploy@auto_detect_version_branch
+        - uses: pactflow/actions/can-i-deploy@v2
           with:
             to_environment: production
             application_name: explore-cli
@@ -140,9 +140,9 @@ jobs:
             file_glob: true
             tag: ${{ steps.gitversion.outputs.MajorMinorPatch }}
 
-        - uses: pactflow/actions/record-release@auto_detect_version_branch
+        - uses: pactflow/actions/record-release@v2
           with:
             environment: production
             application_name: explore-cli
-            PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-            PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+            broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
+            token: ${{ secrets.PACT_BROKER_TOKEN }}
