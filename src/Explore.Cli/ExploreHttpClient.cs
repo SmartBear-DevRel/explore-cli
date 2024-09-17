@@ -386,6 +386,9 @@ public class ExploreHttpClient
     public async Task<GetSpacesResult> GetSpaces(string exploreCookie)
     {
 
+        _httpClient.DefaultRequestHeaders.Clear();
+        _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+        _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
         var spacesResponse = await _httpClient.GetAsync("/spaces?page=0&size=2000");
         if (spacesResponse.StatusCode == HttpStatusCode.OK)
         {
@@ -429,7 +432,9 @@ public class ExploreHttpClient
 
     public async Task<GetSpaceApisResult> GetSpaceApis(string exploreCookie, Guid? spaceId)
     {
-
+        _httpClient.DefaultRequestHeaders.Clear();
+        _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+        _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
         var apisResponse = await _httpClient.GetAsync($"/spaces/{spaceId}/apis?page=0&size=2000");
         if (apisResponse.StatusCode == HttpStatusCode.OK)
         {
@@ -462,7 +467,9 @@ public class ExploreHttpClient
 
     public async Task<GetApiConnectionsForSpaceResult> GetApiConnectionsForSpace(string exploreCookie, Guid? spaceId, Guid? apiId)
     {
-
+        _httpClient.DefaultRequestHeaders.Clear();
+        _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
+        _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
         var connectionsResponse = await _httpClient.GetAsync($"/spaces/{spaceId}/apis/{apiId}/connections?page=0&size=2000");
         if (connectionsResponse.StatusCode == HttpStatusCode.OK)
         {

@@ -13,12 +13,15 @@ public partial class Transaction
 
 public partial class Connection
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("id")]
     public string? Id { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("type")]
     public string? Type { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
@@ -31,12 +34,17 @@ public partial class Connection
     [JsonPropertyName("connectionDefinition")]
     public ConnectionDefinition? ConnectionDefinition { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("paths")]
     public Dictionary<string, object>? Paths {get; set;}
 
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("settings")]
     public Settings? Settings { get; set; }
 
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("credentials")]
     public Credentials? Credentials { get; set; }    
 }
@@ -143,12 +151,15 @@ public partial class Credentials
 
 public partial class ConnectionDefinition
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("openapi")]
     public string? OpenApi { get; set; }
-
+   
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("servers")]
     public List<Server>? Servers { get; set; }
-
+    
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("paths")]
     public Dictionary<string, object>? Paths { get; set; }
 }
@@ -251,6 +262,10 @@ public class SpaceRequest
     {
         [JsonPropertyName("self")]
         public Apis? Self { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonPropertyName("apis")]
+        public Apis? Apis { get; set; }
 
     }
 
