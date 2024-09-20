@@ -548,5 +548,142 @@ namespace Consumer.Tests
                 Assert.Equal(expectedResult.Connections.Embedded.Connections[0].Name, response?.Connections?.Embedded?.Connections?[0].Name);
             });
         }
+
+        [Fact]
+        public async Task UpsertSpaceWithExistingSpaceId()
+        {
+            var expectedStatusCode = HttpStatusCode.OK;
+            var expectedId = new Guid();
+            var spaceName = "new space";
+            var spaceId = new Guid();
+            var spaceExists = true;
+            var spaceContent = new SpaceRequest() { Name = spaceName };
+            var exploreXsrfToken = "bar";
+            var exploreCookie = $"foo;XSRF-TOKEN={exploreXsrfToken}";
+            pact
+                .UponReceiving("a request to update a space")
+                    .Given("a space with name {name} and spaceId {spaceId} exists", new Dictionary<string, string> { ["name"] = spaceName, ["spaceId"] = spaceId.ToString() })
+                    .WithRequest(HttpMethod.Put, $"/spaces/{spaceId}")
+                    .WithHeader("Cookie", exploreCookie)
+                    .WithHeader("X-Xsrf-Token", exploreXsrfToken)
+                    .WithJsonBody(spaceContent)
+                .WillRespond()
+                    .WithStatus(expectedStatusCode)
+                    .WithJsonBody(new SpaceResponse()
+                    {
+                        Id = expectedId,
+                        Name = spaceName,
+                        Links = new Links
+                        {
+                            Self = new()
+                            {
+                                Href = new Uri("http://test"),
+                            }
+                        }
+                    });
+
+            await pact.VerifyAsync(async ctx =>
+            {
+                var client = new ExploreHttpClient(ctx.MockServerUri.ToString());
+
+                var spaceResponse = await client.UpsertSpace(exploreCookie, spaceExists, spaceName, spaceId.ToString());
+
+                Assert.Equal(expectedId, spaceResponse.Id);
+            });
+        }
+        [Fact]
+        public async Task UpsertApiWithoutExistingApiId()
+        {
+            // NOTE, if space exists we need to mock out
+            // CheckApiExists as well. For another test.
+            var expectedStatusCode = HttpStatusCode.Created;
+            var expectedId = new Guid();
+            var spaceName = "new space";
+            var apiName = "new api";
+            var apiType = new Connection
+            {
+                Type = "REST"
+            };
+            var spaceId = new Guid();
+            var apiId = new Guid();
+            var apiContent = new ApiRequest() { Name = apiName, Type = "REST" };
+            var exploreXsrfToken = "bar";
+            var exploreCookie = $"foo;XSRF-TOKEN={exploreXsrfToken}";
+            pact
+                .UponReceiving("a request to update a api that does not exist, creates a new api")
+                    .Given("a space with apiId {apiId} does not exist", new Dictionary<string, string> { ["apiId"] = apiId.ToString() })
+                    .WithRequest(HttpMethod.Post, $"/spaces/{spaceId}/apis")
+                    .WithHeader("Cookie", exploreCookie)
+                    .WithHeader("X-Xsrf-Token", exploreXsrfToken)
+                    .WithJsonBody(apiContent)
+                .WillRespond()
+                    .WithStatus(expectedStatusCode)
+                    .WithJsonBody(new ApiResponse()
+                    {
+                        Id = expectedId,
+                        Name = spaceName,
+                        Type = apiType.Type.ToString(),
+                        Description = "foo",
+                        Servers = new List<Server>
+                        {
+
+                        },
+                    });
+
+            await pact.VerifyAsync(async ctx =>
+            {
+                var client = new ExploreHttpClient(ctx.MockServerUri.ToString());
+
+                var spaceResponse = await client.UpsertApi(exploreCookie, false, spaceId.ToString(), null, apiName, apiType.Type.ToString(), false);
+
+                Assert.Equal(expectedId, spaceResponse.Id);
+            });
+        }
+        [Fact]
+        public async Task UpsertConnectionWithoutExistingConnectionId()
+        {
+            // NOTE, if space exists we need to mock out
+            // CheckConnectionExists as well. For another test.
+            var expectedStatusCode = HttpStatusCode.Created;
+            var apiType = new Connection
+            {
+                Type = "ConnectionRequest"
+            };
+            var spaceId = new Guid();
+            var apiId = new Guid();
+            var apiContent =
+                            new Connection()
+                            {
+                                Id = new Guid().ToString(),
+                                Name = "REST",
+                                Schema = "OpenAPI",
+                                SchemaVersion = "3.0.1",
+                                Type = "ConnectionRequest",
+                                ConnectionDefinition = new ConnectionDefinition
+                                {
+                                },
+                            };
+
+            var exploreXsrfToken = "bar";
+            var exploreCookie = $"foo;XSRF-TOKEN={exploreXsrfToken}";
+            pact
+                .UponReceiving("a request to update an api connection that does not exist, creates a new api connection")
+                    .Given("a space with apiId {apiId} exists", new Dictionary<string, string> { ["apiId"] = apiId.ToString() })
+                    .WithRequest(HttpMethod.Post, $"/spaces/{spaceId}/apis/{apiId}/connections")
+                    .WithHeader("Cookie", exploreCookie)
+                    .WithHeader("X-Xsrf-Token", exploreXsrfToken)
+                    .WithJsonBody(apiContent)
+                .WillRespond()
+                    .WithStatus(expectedStatusCode);
+
+            await pact.VerifyAsync(async ctx =>
+            {
+                var client = new ExploreHttpClient(ctx.MockServerUri.ToString());
+
+                var connectionResponse = await client.UpsertConnection(exploreCookie, false, spaceId.ToString(), apiId.ToString(), null, apiContent, false);
+
+                Assert.True(connectionResponse);
+            });
+        }
     }
 }
