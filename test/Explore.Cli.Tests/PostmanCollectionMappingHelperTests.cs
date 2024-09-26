@@ -117,8 +117,8 @@ public class PostmanCollectionMappingHelperTests
         var mockCollectionAsJson = File.ReadAllText(filePath);
         var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(mockCollectionAsJson);
         // Act
-        Assert.Equal("Get authenticated user", postmanCollection.Item[0].ItemList[0].Name);
-        Assert.Equal("GET", postmanCollection.Item[0].ItemList[0].Request?.Method?.ToString());
-        Assert.Equal("Gets information about the authenticated user.", postmanCollection.Item[0].ItemList[0].Request?.Description.Content.ToString());
+        Assert.Equal("Get authenticated user", postmanCollection?.Item?[0].ItemList?[0].Name);
+        Assert.Equal("GET", postmanCollection?.Item?[0].ItemList?[0].Request?.Method?.ToString());
+        Assert.Equal("Gets information about the authenticated user.", postmanCollection?.Item?[0].ItemList?[0].Request?.Description?.Content?.ToString());
     }
 }

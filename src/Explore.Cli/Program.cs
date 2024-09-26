@@ -7,6 +7,7 @@ using Spectre.Console;
 using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Postman;
 using Explore.Cli.Models.Insomnia;
+using Explore.Cli.ExploreHttpClient;
 
 internal class Program
 {
@@ -118,7 +119,7 @@ internal class Program
             //validate collection against postman collection schema
             string json = File.ReadAllText(filePath);
 
-            if(!PostmanCollectionMappingHelper.IsCollectionVersion2_1(json))
+            if (!PostmanCollectionMappingHelper.IsCollectionVersion2_1(json))
             {
                 Console.WriteLine($"The provided JSON does not conform to the expected schema. Errors: Only Postman Collection v2.1 are supported at this time.");
                 return;
@@ -143,13 +144,10 @@ internal class Program
             AnsiConsole.Write(panel);
             Console.WriteLine("");
 
-            var exploreHttpClient = new HttpClient
-            {
-                BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-            };
+            var exploreHttpClient = new ExploreHttpClient();
 
             //iterate over the items and import
-            if(postmanCollection != null && postmanCollection.Item != null)
+            if (postmanCollection != null && postmanCollection.Item != null)
             {
                 //create an initial space to hold the collection items
                 var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{postmanCollection.Info?.Name}[/]"), Width = 100, UseSafeBorder = true };
@@ -157,32 +155,23 @@ internal class Program
                 resultTable.AddColumn(new TableColumn("Details").Centered());
 
                 var cleanedCollectionName = UtilityHelper.CleanString(postmanCollection.Info?.Name);
-                var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
-
-                exploreHttpClient.DefaultRequestHeaders.Clear();
-                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);
-
-                if (spacesResponse.StatusCode == HttpStatusCode.Created)
+                var createSpacesResult = await exploreHttpClient.CreateSpace(exploreCookie, cleanedCollectionName);
+                if (createSpacesResult.Result)
                 {
                     var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
                     apiImportResults.AddColumn("Result");
                     apiImportResults.AddColumn("API Imported");
                     apiImportResults.AddColumn("Connection Imported");
 
-                    //parse the response
-                    var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
-
                     //Postman Items cant contain nested items, so we can flatten the list
                     var flattenedItems = PostmanCollectionMappingHelper.FlattenItems(postmanCollection.Item);
 
-                    foreach(var item in flattenedItems)
+                    foreach (var item in flattenedItems)
                     {
-                        if(item.Request != null)
+                        if (item.Request != null)
                         {
                             //check if request format is supported
-                            if(!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
+                            if (!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
                             {
                                 apiImportResults.AddRow("[orange3]skipped[/]", $"Item '{item.Name}' skipped", $"Request method not supported");
                                 continue;
@@ -190,26 +179,15 @@ internal class Program
 
                             //now let's create an API entry in the space
                             var cleanedAPIName = UtilityHelper.CleanString(item.Name);
-                            var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"{item.Request.Description?.Content + "\n" }imported from postman on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
+                            var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "postman", item.Request.Description?.Content);
 
-                            exploreHttpClient.DefaultRequestHeaders.Clear();
-                            exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                            exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                            var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
-
-                            if (apiResponse.StatusCode == HttpStatusCode.Created)
+                            if (createApiEntryResult.Result)
                             {
-                                var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
                                 var connectionRequestBody = JsonSerializer.Serialize(PostmanCollectionMappingHelper.MapPostmanCollectionItemToExploreConnection(item));
-                                var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
-
                                 //now let's do the work and import the connection
-                                exploreHttpClient.DefaultRequestHeaders.Clear();
-                                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                                var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+                                var createConnectionResponse = await exploreHttpClient.CreateApiConnection(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, connectionRequestBody);
 
-                                if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                                if (createConnectionResponse.Result)
                                 {
                                     apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
                                 }
@@ -220,7 +198,7 @@ internal class Program
                             }
                             else
                             {
-                                apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+                                apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {createApiEntryResult.StatusCode}", "");
                             }
                         }
                     }
@@ -236,16 +214,16 @@ internal class Program
                 }
                 else
                 {
-                    switch (spacesResponse.StatusCode)
+                    switch (createSpacesResult.Reason)
                     {
-                        case HttpStatusCode.OK:
+                        case "AUTH_REQUIRED":
                             // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
                             resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
 
-                        case HttpStatusCode.Conflict:
+                        case "SPACE_CONFLICT":
                             var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
                             apiImportResults.AddColumn("Result");
                             apiImportResults.AddColumn("API Imported");
@@ -258,7 +236,7 @@ internal class Program
                             break;
 
                         default:
-                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {createSpacesResult.StatusCode}, Details: {createSpacesResult.Reason}[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
@@ -400,11 +378,7 @@ internal class Program
             AnsiConsole.Write(panel);
             Console.WriteLine("");
 
-            var exploreHttpClient = new HttpClient
-            {
-                BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-            };
-
+            var exploreHttpClient = new ExploreHttpClient();
             // iterate over the items and import
             if (pactContract != null && pactContract?.Interactions != null)
             {
@@ -413,22 +387,16 @@ internal class Program
                 resultTable.AddColumn("Result");
                 resultTable.AddColumn(new TableColumn("Details").Centered());
 
-                var cleanedCollectionName = UtilityHelper.CleanString($"{pactContract?.Consumer.Name}-{pactContract?.Provider.Name}");
-                var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
-
-                exploreHttpClient.DefaultRequestHeaders.Clear();
-                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);
-
-                if (spacesResponse.StatusCode == HttpStatusCode.Created)
+                var spaceName = UtilityHelper.CleanString($"{pactContract?.Consumer.Name}-{pactContract?.Provider.Name}");
+                var createSpacesResult = await exploreHttpClient.CreateSpace(exploreCookie, spaceName);
+                if (createSpacesResult.Result)
                 {
-                    var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
+
+                    var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{spaceName}[/] CREATED"), Width = 75, UseSafeBorder = true };
                     apiImportResults.AddColumn("Result");
                     apiImportResults.AddColumn("API Imported");
                     apiImportResults.AddColumn("Connection Imported");
 
-                    var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
                     var interactions = (pactContract?.Interactions) ?? throw new Exception("No interactions found in Pact file");
                     if (interactions.Count == 0)
                     {
@@ -441,33 +409,23 @@ internal class Program
                         {
                             if (interaction is PactV4.Interaction pactV4Interaction)
                             {
-                                if (pactV4Interaction.Type.GetValueOrDefault() != PactV4.InteractionType.SynchronousHttp)                                {
+                                if (pactV4Interaction.Type.GetValueOrDefault() != PactV4.InteractionType.SynchronousHttp)
+                                {
                                     Console.WriteLine($"Skipping interaction, as {pactV4Interaction.Type} is not Synchronous/HTTP");
                                     break;
                                 }
                             }
                             //now let's create an API entry in the space
                             var cleanedAPIName = UtilityHelper.CleanString(interaction.Description.ToString());
-                            var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from pact file on {DateTime.UtcNow.ToShortDateString()}\nPact Specification: {pactSpecVersion}" }), Encoding.UTF8, "application/json");
-
-                            exploreHttpClient.DefaultRequestHeaders.Clear();
-                            exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                            exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                            var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
-
-                            if (apiResponse.StatusCode == HttpStatusCode.Created)
+                            var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "pact file", $"Pact Specification: {pactSpecVersion}");
+                            if (createApiEntryResult.Result)
                             {
-                                var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
                                 var connectionRequestBody = JsonSerializer.Serialize(PactMappingHelper.MapPactInteractionToExploreConnection(interaction, pactBaseUri));
-                                var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
 
                                 // //now let's do the work and import the connection
-                                exploreHttpClient.DefaultRequestHeaders.Clear();
-                                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                                var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+                                var createConnectionResponse = await exploreHttpClient.CreateApiConnection(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, connectionRequestBody);
 
-                                if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                                if (createConnectionResponse.Result)
                                 {
                                     apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
                                 }
@@ -478,7 +436,7 @@ internal class Program
                             }
                             else
                             {
-                                apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+                                apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {createApiEntryResult.StatusCode}", "");
                             }
                         }
                     }
@@ -488,23 +446,21 @@ internal class Program
 
                     if (verboseOutput == null || verboseOutput == false)
                     {
-                        AnsiConsole.MarkupLine($"[green]\u2713 [/]{cleanedCollectionName}");
+                        AnsiConsole.MarkupLine($"[green]\u2713 [/]{spaceName}");
                     }
-
                 }
                 else
                 {
-                    switch (spacesResponse.StatusCode)
+                    switch (createSpacesResult.Reason)
                     {
-                        case HttpStatusCode.OK:
+                        case "AUTH_REQUIRED":
                             // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
                             resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
-
-                        case HttpStatusCode.Conflict:
-                            var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
+                        case "SPACE_CONFLICT":
+                            var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {spaceName} [orange3]ALREADY EXISTS[/]") };
                             apiImportResults.AddColumn("Result");
                             apiImportResults.AddColumn("API Imported");
                             apiImportResults.AddColumn("Connection Imported");
@@ -514,9 +470,8 @@ internal class Program
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
-
                         default:
-                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase}[/]"));
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {createSpacesResult.StatusCode}, Details: {createSpacesResult.Reason}[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
@@ -588,7 +543,7 @@ internal class Program
         {
             string json = File.ReadAllText(filePath);
 
-            if(!InsomniaCollectionMappingHelper.IsCollectionExportVersion4(json))
+            if (!InsomniaCollectionMappingHelper.IsCollectionExportVersion4(json))
             {
                 Console.WriteLine($"The provided JSON does not conform to the expected schema. Errors: Only Insomnia collection exports using `__export_version: 4` are supported at this time.");
                 return;
@@ -606,13 +561,10 @@ internal class Program
             AnsiConsole.Write(panel);
             Console.WriteLine("");
 
-            var exploreHttpClient = new HttpClient
-            {
-                BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-            };
+            var exploreHttpClient = new ExploreHttpClient();
 
             //iterate over the items and import
-            if(insomniaCollection != null && insomniaCollection.Resources != null)
+            if (insomniaCollection != null && insomniaCollection.Resources != null)
             {
                 //get the workspace resource which contains the collection name
                 var collectionResource = insomniaCollection.Resources.FirstOrDefault(r => string.Equals(r.Type, "workspace", StringComparison.OrdinalIgnoreCase) && string.Equals(r.Scope, "collection", StringComparison.OrdinalIgnoreCase));
@@ -623,30 +575,21 @@ internal class Program
                 resultTable.AddColumn(new TableColumn("Details").Centered());
 
                 var cleanedCollectionName = UtilityHelper.CleanString(collectionResource?.Name);
-                var spaceContent = new StringContent(JsonSerializer.Serialize(new SpaceRequest() { Name = cleanedCollectionName }), Encoding.UTF8, "application/json");
-
-                exploreHttpClient.DefaultRequestHeaders.Clear();
-                exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                var spacesResponse = await exploreHttpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);
-
-                if (spacesResponse.StatusCode == HttpStatusCode.Created)
+                var createSpacesResult = await exploreHttpClient.CreateSpace(exploreCookie, cleanedCollectionName);
+                if (createSpacesResult.Result)
                 {
                     var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
                     apiImportResults.AddColumn("Result");
                     apiImportResults.AddColumn("API Imported");
                     apiImportResults.AddColumn("Connection Imported");
 
-                    //parse the response
-                    var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
-
                     //separate requests and environment resources
                     var requestResources = insomniaCollection.Resources.Where(r => string.Equals(r.Type, "request", StringComparison.OrdinalIgnoreCase)).ToList();
                     var environmentResources = insomniaCollection.Resources.Where(r => string.Equals(r.Type, "environment", StringComparison.OrdinalIgnoreCase)).ToList();
 
-                    foreach(var resource in requestResources)
+                    foreach (var resource in requestResources)
                     {
-                        if(!InsomniaCollectionMappingHelper.IsItemRequestModeSupported(resource))
+                        if (!InsomniaCollectionMappingHelper.IsItemRequestModeSupported(resource))
                         {
                             apiImportResults.AddRow("[orange3]skipped[/]", $"Resource '{resource.Name}' skipped", $"Request Method or MimeType not supported");
                             continue;
@@ -654,27 +597,16 @@ internal class Program
 
                         //now let's create an API entry in the space
                         var cleanedAPIName = UtilityHelper.CleanString(resource.Name);
-                        var apiContent = new StringContent(JsonSerializer.Serialize(new ApiRequest() { Name = cleanedAPIName, Type = "REST", Description = $"imported from Insomnia on {DateTime.UtcNow.ToShortDateString()}" }), Encoding.UTF8, "application/json");
-
-                        exploreHttpClient.DefaultRequestHeaders.Clear();
-                        exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                        exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                        var apiResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis", apiContent);
-
-                        if (apiResponse.StatusCode == HttpStatusCode.Created)
+                        var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "Insomnia", null);
+                        if (createApiEntryResult.Result)
                         {
-                            var createdApiResponse = apiResponse.Content.ReadFromJsonAsync<ApiResponse>();
                             var connectionRequestBody = JsonSerializer.Serialize(InsomniaCollectionMappingHelper.MapInsomniaRequestResourceToExploreConnection(resource, environmentResources));
-                            var connectionContent = new StringContent(connectionRequestBody, Encoding.UTF8, "application/json");
                             //Console.WriteLine($"Connection Request Body for {resource.Name}: {connectionRequestBody}");
 
                             //now let's do the work and import the connection
-                            exploreHttpClient.DefaultRequestHeaders.Clear();
-                            exploreHttpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                            exploreHttpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                            var connectionResponse = await exploreHttpClient.PostAsync($"/spaces-api/v1/spaces/{spaceResponse.Result?.Id}/apis/{createdApiResponse.Result?.Id}/connections", connectionContent);
+                            var createConnectionResponse = await exploreHttpClient.CreateApiConnection(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, connectionRequestBody);
 
-                            if (connectionResponse.StatusCode == HttpStatusCode.Created)
+                            if (createConnectionResponse.Result)
                             {
                                 apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
                             }
@@ -685,7 +617,7 @@ internal class Program
                         }
                         else
                         {
-                            apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {apiResponse.StatusCode}", "");
+                            apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {createApiEntryResult.StatusCode}", "");
                         }
                     }
 
@@ -700,16 +632,16 @@ internal class Program
                 }
                 else
                 {
-                    switch (spacesResponse.StatusCode)
+                    switch (createSpacesResult.Reason)
                     {
-                        case HttpStatusCode.OK:
+                        case "AUTH_REQUIRED":
                             // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
                             resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
 
-                        case HttpStatusCode.Conflict:
+                        case "SPACE_CONFLICT":
                             var apiImportResults = new Table() { Title = new TableTitle(text: $"[orange3]SPACE[/] {cleanedCollectionName} [orange3]ALREADY EXISTS[/]") };
                             apiImportResults.AddColumn("Result");
                             apiImportResults.AddColumn("API Imported");
@@ -722,8 +654,7 @@ internal class Program
                             break;
 
                         default:
-                            var content = await spacesResponse.Content.ReadAsStringAsync();
-                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {spacesResponse.StatusCode}, Details: {spacesResponse.ReasonPhrase} + {content}[/]"));
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] StatusCode: {createSpacesResult.StatusCode}, Details: {createSpacesResult.Reason}[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
@@ -751,30 +682,25 @@ internal class Program
 
     internal static async Task ExportSpaces(string exploreCookie, string filePath, string exportFileName, string names, bool? verboseOutput)
     {
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-        };
+        var exploreHttpClient = new ExploreHttpClient();
 
-        httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
         //get spaces
-        var spacesResponse = await httpClient.GetAsync("/spaces-api/v1/spaces?page=0&size=2000");
+        var spacesResponse = await exploreHttpClient.GetSpaces(exploreCookie);
 
-        if (spacesResponse.StatusCode == HttpStatusCode.OK)
+        if (spacesResponse.Result)
         {
             //ensure expected spaces response (not silent redirect to Auth provider)
-            if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
-            {
-                AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
-                return;
-            }
 
             var namesList = names?.Split(',')
                 .Select(name => name.Trim())
                 .ToList();
-            var spaces = await spacesResponse.Content.ReadFromJsonAsync<PagedSpaces>();
+            var spaces = spacesResponse.Spaces;
+
+            if (spaces?.Embedded == null){
+                AnsiConsole.MarkupLine($"[red]No spaces to export[/]");
+                return;
+            }
             var panel = new Panel($"You have [green]{spaces!.Embedded!.Spaces!.Count} spaces[/] in explore");
             panel.Width = 100;
             panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();
@@ -827,14 +753,10 @@ internal class Program
                 var spaceToExport = new ExploreSpace() { Name = space.Name, Id = space.Id };
 
                 // get the APIs
-                httpClient.DefaultRequestHeaders.Clear();
-                httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-
                 //get space APIs
-                var apisResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{space.Id}/apis?page=0&size=2000");
+                var apisResponse = await exploreHttpClient.GetSpaceApis(exploreCookie, space.Id);
 
-                if (apisResponse.StatusCode == HttpStatusCode.OK)
+                if (apisResponse.Result)
                 {
                     var apiImportResults = new Table() { Title = new TableTitle(text: $"Processing [green]APIs[/]"), Width = 75, UseSafeBorder = true };
                     apiImportResults.AddColumn("Result");
@@ -842,7 +764,7 @@ internal class Program
                     apiImportResults.AddColumn("Connections Processed");
 
                     var spaceAPIs = new List<ExploreApi>();
-                    var apis = await apisResponse.Content.ReadFromJsonAsync<PagedApis>();
+                    var apis = apisResponse.Apis;
 
                     if (apis?.Embedded != null)
                     {
@@ -853,14 +775,11 @@ internal class Program
                                 var apiToExport = new ExploreApi() { Id = api.Id, Name = api.Name, Type = api.Type };
 
                                 // get the API connections
-                                httpClient.DefaultRequestHeaders.Clear();
-                                httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-                                httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-                                var connectionsResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{space.Id}/apis/{api.Id}/connections?page=0&size=2000");
+                                var connectionsResponse = await exploreHttpClient.GetApiConnectionsForSpace(exploreCookie, space.Id, api.Id);
 
-                                if (connectionsResponse.StatusCode == HttpStatusCode.OK)
+                                if (connectionsResponse.Result)
                                 {
-                                    var connections = await connectionsResponse.Content.ReadFromJsonAsync<PagedConnections>();
+                                    var connections = connectionsResponse.Connections;
                                     apiToExport.connections = new List<Connection>();
 
                                     foreach (var connection in connections!.Embedded!.Connections!)
@@ -930,6 +849,12 @@ internal class Program
 
             AnsiConsole.MarkupLine($"[green] All done! {spacesToExport.Count()} of {spaces!.Embedded!.Spaces!.Count} spaces exported to: {filePath} [/]");
         }
+        else if (spacesResponse.Reason == "AUTH_REQUIRED")
+        {
+            AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
+            return;
+        }
+
     }
 
     internal static async Task ImportSpaces(string exploreCookie, string filePath, string names, bool? verboseOutput)
@@ -990,7 +915,7 @@ internal class Program
             };
             AnsiConsole.Write(panel);
             Console.WriteLine("");
-
+            var exploreHttpClient = new ExploreHttpClient();
             //iterate over spaces
             if (exportedSpaces != null && exportedSpaces.ExploreSpaces != null)
             {
@@ -1003,13 +928,13 @@ internal class Program
                         continue;
                     }
 
-                    var spaceExists = await CheckSpaceExists(exploreCookie, exportedSpace.Id?.ToString(), verboseOutput);
+                    var spaceExists = await exploreHttpClient.CheckSpaceExists(exploreCookie, exportedSpace.Id?.ToString(), verboseOutput);
 
                     var resultTable = new Table() { Title = new TableTitle(text: $"PROCESSING [green]{exportedSpace.Name}[/]"), Width = 100, UseSafeBorder = true };
                     resultTable.AddColumn("Result");
                     resultTable.AddColumn(new TableColumn("Details").Centered());
 
-                    var importedSpace = await UpsertSpace(exploreCookie, spaceExists, exportedSpace.Name, exportedSpace.Id.ToString());
+                    var importedSpace = await exploreHttpClient.UpsertSpace(exploreCookie, spaceExists, exportedSpace.Name, exportedSpace.Id.ToString());
 
                     if (!string.IsNullOrEmpty(importedSpace.Name))
                     {
@@ -1026,7 +951,7 @@ internal class Program
                                 if (string.Equals(exportedAPI.Type, "REST", StringComparison.OrdinalIgnoreCase))
                                 {
                                     //remark - Improve DTO mapping here
-                                    var importedApi = await UpsertApi(exploreCookie, spaceExists, importedSpace.Id.ToString(), exportedAPI.Id.ToString(), exportedAPI.Name, exportedAPI.Type, verboseOutput);
+                                    var importedApi = await exploreHttpClient.UpsertApi(exploreCookie, spaceExists, importedSpace.Id.ToString(), exportedAPI.Id.ToString(), exportedAPI.Name, exportedAPI.Type, verboseOutput);
 
                                     if (!string.IsNullOrEmpty(importedApi.Name))
                                     {
@@ -1036,7 +961,7 @@ internal class Program
                                         {
                                             foreach (var exportedConnection in exportedAPI.connections) //add type filter for now
                                             {
-                                                var importedConnection = await UpsertConnection(exploreCookie, spaceExists, importedSpace.Id.ToString(), importedApi.Id.ToString(), exportedConnection?.Id?.ToString(), exportedConnection, verboseOutput);
+                                                var importedConnection = await exploreHttpClient.UpsertConnection(exploreCookie, spaceExists, importedSpace.Id.ToString(), importedApi.Id.ToString(), exportedConnection?.Id?.ToString(), exportedConnection, verboseOutput);
 
                                                 if (importedConnection)
                                                 {
@@ -1082,248 +1007,4 @@ internal class Program
         }
     }
 
-    private static async Task<bool> CheckSpaceExists(string exploreCookie, string? id, bool? verboseOutput)
-    {
-        if (string.IsNullOrEmpty(id))
-        {
-            return false;
-        }
-
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-        };
-
-        httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-
-        var spacesResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{id}");
-
-        if (spacesResponse.StatusCode == HttpStatusCode.OK)
-        {
-            if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
-            {
-                AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
-                throw new HttpRequestException("Please review your credentials, Unexpected response GET spaces endpoint");
-            }
-
-            return true;
-        }
-
-        if (verboseOutput != null && verboseOutput == true)
-        {
-            AnsiConsole.MarkupLine($"[orange3]StatusCode {spacesResponse.StatusCode} returned from the GetSpaceById API. New space will be created[/]");
-        }
-
-        return false;
-    }
-
-    private static async Task<bool> CheckApiExists(string exploreCookie, string spaceId, string? id, bool? verboseOutput)
-    {
-        if (string.IsNullOrEmpty(id))
-        {
-            return false;
-        }
-
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-        };
-
-        httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-
-        var spacesResponse = await httpClient.GetAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{id}");
-
-        if (spacesResponse.StatusCode == HttpStatusCode.OK)
-        {
-            return true;
-        }
-
-        if (verboseOutput != null && verboseOutput == true)
-        {
-            AnsiConsole.MarkupLine($"[orange3]StatusCode {spacesResponse.StatusCode} returned from the GetApiById API. New API will be created in the space.[/]");
-        }
-
-        return false;
-    }
-
-    private static async Task<bool> CheckConnectionExists(string exploreCookie, string spaceId, string apiId, string? id, bool? verboseOutput)
-    {
-        if (string.IsNullOrEmpty(id))
-        {
-            return false;
-        }
-
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-        };
-
-        httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-
-        var response = await httpClient.GetAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{apiId}/connections/{id}");
-
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            return true;
-        }
-
-        if (verboseOutput != null && verboseOutput == true)
-        {
-            AnsiConsole.MarkupLine($"[orange3]StatusCode {response.StatusCode} returned from the GetConnectionById API. New connection within API will be created.[/]");
-        }
-
-        return false;
-    }
-
-    private static async Task<SpaceResponse> UpsertSpace(string exploreCookie, bool spaceExists, string? name, string? id)
-    {
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-        };
-
-        var spaceContent = new StringContent(JsonSerializer.Serialize(
-            new SpaceRequest()
-            {
-                Name = name
-            }
-        ), Encoding.UTF8, "application/json");
-
-        httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-
-        HttpResponseMessage? spacesResponse;
-
-        if (string.IsNullOrEmpty(id) || !spaceExists)
-        {
-            spacesResponse = await httpClient.PostAsync("/spaces-api/v1/spaces", spaceContent);
-        }
-        else
-        {
-            spacesResponse = await httpClient.PutAsync($"/spaces-api/v1/spaces/{id}", spaceContent);
-
-            if (spacesResponse.StatusCode == HttpStatusCode.Conflict)
-            {
-                // swallow 409 as server is being overly strict
-                return new SpaceResponse() { Id = Guid.Parse(id), Name = name };
-            }
-        }
-
-        if (spacesResponse.IsSuccessStatusCode)
-        {
-            return await spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>() ?? new SpaceResponse();
-        }
-
-        if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/json"))
-        {
-            AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from POST/PUT spaces API for name: {name}, id:{id}[/]");
-        }
-        else
-        {
-            AnsiConsole.MarkupLine($"[red]StatusCode {spacesResponse.StatusCode} returned from the POST/PUT spaces API for name: {name}, id:{id}[/]");
-        }
-
-        return new SpaceResponse();
-    }
-
-    private static async Task<ApiResponse> UpsertApi(string exploreCookie, bool spaceExists, string spaceId, string? id, string? name, string? type, bool? verboseOutput)
-    {
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-        };
-
-        var apiContent = new StringContent(JsonSerializer.Serialize(
-            new ApiRequest()
-            {
-                Name = name,
-                Type = type
-            }
-        ), Encoding.UTF8, "application/json");
-
-        httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-
-        HttpResponseMessage? apiResponse;
-
-        if (spaceExists && await CheckApiExists(exploreCookie, spaceId, id, verboseOutput))
-        {
-            // update the api
-            apiResponse = await httpClient.PutAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{id}", apiContent);
-
-            if (apiResponse.StatusCode == HttpStatusCode.Conflict)
-            {
-                // swallow 409 as server is being overly strict
-                return new ApiResponse() { Id = Guid.Parse(id ?? string.Empty), Name = name, Type = type };
-            }
-        }
-        else
-        {
-            //create the api
-            apiResponse = await httpClient.PostAsync($"/spaces-api/v1/spaces/{spaceId}/apis", apiContent);
-        }
-
-        if (apiResponse.IsSuccessStatusCode)
-        {
-            return await apiResponse.Content.ReadFromJsonAsync<ApiResponse>() ?? new ApiResponse();
-        }
-
-        if (!UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(apiResponse.Content.Headers, "application/json"))
-        {
-            AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from POST/PUT spaces API for name: {name}, id:{id}[/]");
-        }
-        else
-        {
-            AnsiConsole.WriteLine($"[red]StatusCode {apiResponse.StatusCode} returned from the POST spaces/{{id}}/apis for {name}[/]");
-        }
-
-        return new ApiResponse();
-    }
-
-    private static async Task<bool> UpsertConnection(string exploreCookie, bool spaceExists, string spaceId, string apiId, string? connectionId, Connection? connection, bool? verboseOutput)
-    {
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.explore.swaggerhub.com")
-        };
-
-        httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
-        httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-
-        var connectionContent = new StringContent(JsonSerializer.Serialize(MappingHelper.MassageConnectionExportForImport(connection)), Encoding.UTF8, "application/json");
-
-        HttpResponseMessage? connectionResponse;
-
-        if (spaceExists && await CheckConnectionExists(exploreCookie, spaceId, apiId, connectionId, verboseOutput))
-        {
-            connectionResponse = await httpClient.PutAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{apiId}/connections/{connectionId}", connectionContent);
-        }
-        else
-        {
-            connectionResponse = await httpClient.PostAsync($"/spaces-api/v1/spaces/{spaceId}/apis/{apiId}/connections", connectionContent);
-        }
-
-        if (connectionResponse.IsSuccessStatusCode)
-        {
-            return true;
-        }
-        else
-        {
-            if (!UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(connectionResponse.Content.Headers, "application/json"))
-            {
-                AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from the connections API for api: {apiId} and {connection?.Name}[/]");
-            }
-            else
-            {
-                AnsiConsole.WriteLine($"[red]StatusCode {connectionResponse.StatusCode} returned from the connections API for api: {apiId} and {connection?.Name}[/]");
-
-                var message = await connectionResponse.Content.ReadAsStringAsync();
-                AnsiConsole.WriteLine($"error: {message}");
-            }
-        }
-        return false;
-    }
 }
