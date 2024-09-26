@@ -696,6 +696,11 @@ internal class Program
                 .Select(name => name.Trim())
                 .ToList();
             var spaces = spacesResponse.Spaces;
+
+            if (spaces?.Embedded == null){
+                AnsiConsole.MarkupLine($"[red]No spaces to export[/]");
+                return;
+            }
             var panel = new Panel($"You have [green]{spaces!.Embedded!.Spaces!.Count} spaces[/] in explore");
             panel.Width = 100;
             panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();

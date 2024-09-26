@@ -9,7 +9,7 @@ public class ExploreHttpClient
 {
     private readonly HttpClient _httpClient;
 
-    public ExploreHttpClient(string baseAddress = "https://api.explore.swaggerhub.com/spaces-api/v1")
+    public ExploreHttpClient(string baseAddress = "https://api.explore.swaggerhub.com/spaces-api/v1/")
     {
         _httpClient = new HttpClient { BaseAddress = new Uri(baseAddress) };
     }
@@ -20,17 +20,16 @@ public class ExploreHttpClient
         {
             return false;
         }
-
+        _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
-        var spacesResponse = await _httpClient.GetAsync($"/spaces/{id}");
+        var spacesResponse = await _httpClient.GetAsync($"spaces/{id}");
 
         if (spacesResponse.StatusCode == HttpStatusCode.OK)
         {
             if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
             {
-                Console.WriteLine(spacesResponse);
                 AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
                 throw new HttpRequestException("Please review your credentials, Unexpected response GET spaces endpoint");
             }
@@ -52,11 +51,11 @@ public class ExploreHttpClient
         {
             return false;
         }
-
+        _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
-        var spacesResponse = await _httpClient.GetAsync($"/spaces/{spaceId}/apis/{id}");
+        var spacesResponse = await _httpClient.GetAsync($"spaces/{spaceId}/apis/{id}");
 
         if (spacesResponse.StatusCode == HttpStatusCode.OK)
         {
@@ -79,11 +78,11 @@ public class ExploreHttpClient
         }
 
 
-
+        _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
-        var response = await _httpClient.GetAsync($"/spaces/{spaceId}/apis/{apiId}/connections/{id}");
+        var response = await _httpClient.GetAsync($"spaces/{spaceId}/apis/{apiId}/connections/{id}");
 
         if (response.StatusCode == HttpStatusCode.OK)
         {
@@ -108,7 +107,7 @@ public class ExploreHttpClient
                 Name = name
             }
         ), Encoding.UTF8, "application/json");
-
+        _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
@@ -116,11 +115,11 @@ public class ExploreHttpClient
 
         if (string.IsNullOrEmpty(id) || !spaceExists)
         {
-            spacesResponse = await _httpClient.PostAsync("/spaces", spaceContent);
+            spacesResponse = await _httpClient.PostAsync("spaces", spaceContent);
         }
         else
         {
-            spacesResponse = await _httpClient.PutAsync($"/spaces/{id}", spaceContent);
+            spacesResponse = await _httpClient.PutAsync($"spaces/{id}", spaceContent);
 
             if (spacesResponse.StatusCode == HttpStatusCode.Conflict)
             {
@@ -136,7 +135,6 @@ public class ExploreHttpClient
 
         if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json") && !UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/json"))
         {   
-            Console.WriteLine(spacesResponse);
             AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response from POST/PUT spaces API for name: {name}, id:{id}[/]");
         }
         else
@@ -159,6 +157,7 @@ public class ExploreHttpClient
             }
         ), Encoding.UTF8, "application/json");
 
+        _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
@@ -167,7 +166,7 @@ public class ExploreHttpClient
         if (spaceExists && await CheckApiExists(exploreCookie, spaceId, id, verboseOutput))
         {
             // update the api
-            apiResponse = await _httpClient.PutAsync($"/spaces/{spaceId}/apis/{id}", apiContent);
+            apiResponse = await _httpClient.PutAsync($"spaces/{spaceId}/apis/{id}", apiContent);
 
             if (apiResponse.StatusCode == HttpStatusCode.Conflict)
             {
@@ -178,7 +177,7 @@ public class ExploreHttpClient
         else
         {
             //create the api
-            apiResponse = await _httpClient.PostAsync($"/spaces/{spaceId}/apis", apiContent);
+            apiResponse = await _httpClient.PostAsync($"spaces/{spaceId}/apis", apiContent);
         }
 
         if (apiResponse.IsSuccessStatusCode)
@@ -201,7 +200,7 @@ public class ExploreHttpClient
     public async Task<bool> UpsertConnection(string exploreCookie, bool spaceExists, string spaceId, string apiId, string? connectionId, Connection? connection, bool? verboseOutput)
     {
 
-
+        _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
 
@@ -211,11 +210,11 @@ public class ExploreHttpClient
 
         if (spaceExists && await CheckConnectionExists(exploreCookie, spaceId, apiId, connectionId, verboseOutput))
         {
-            connectionResponse = await _httpClient.PutAsync($"/spaces/{spaceId}/apis/{apiId}/connections/{connectionId}", connectionContent);
+            connectionResponse = await _httpClient.PutAsync($"spaces/{spaceId}/apis/{apiId}/connections/{connectionId}", connectionContent);
         }
         else
         {
-            connectionResponse = await _httpClient.PostAsync($"/spaces/{spaceId}/apis/{apiId}/connections", connectionContent);
+            connectionResponse = await _httpClient.PostAsync($"spaces/{spaceId}/apis/{apiId}/connections", connectionContent);
         }
 
         if (connectionResponse.IsSuccessStatusCode)
@@ -255,7 +254,7 @@ public class ExploreHttpClient
         _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        var spacesResponse = await _httpClient.PostAsync("/spaces", spaceContent);
+        var spacesResponse = await _httpClient.PostAsync("spaces", spaceContent);
         var spaceResponse = spacesResponse.Content.ReadFromJsonAsync<SpaceResponse>();
         switch (spacesResponse.StatusCode)
         {
@@ -263,7 +262,7 @@ public class ExploreHttpClient
                 var spaceId = spaceResponse.Result?.Id;
                 return new CreateSpaceResult
                 {
-                    Id = new Guid(),
+                    Id = spaceId,
                     Result = true,
                     StatusCode = spacesResponse.StatusCode
                 };
@@ -313,7 +312,7 @@ public class ExploreHttpClient
         _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        var apiResponse = await _httpClient.PostAsync($"/spaces/{spaceId}/apis", apiContent);
+        var apiResponse = await _httpClient.PostAsync($"spaces/{spaceId}/apis", apiContent);
         switch (apiResponse.StatusCode)
         {
             case HttpStatusCode.Created:
@@ -349,7 +348,7 @@ public class ExploreHttpClient
         _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        var connectionResponse = await _httpClient.PostAsync($"/spaces/{spaceId}/apis/{apiId}/connections", connectionContent);
+        var connectionResponse = await _httpClient.PostAsync($"spaces/{spaceId}/apis/{apiId}/connections", connectionContent);
 
         switch (connectionResponse.StatusCode)
         {
@@ -385,12 +384,11 @@ public class ExploreHttpClient
         _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        var spacesResponse = await _httpClient.GetAsync("/spaces?page=0&size=2000");
+        var spacesResponse = await _httpClient.GetAsync("spaces?page=0&size=2000");
         if (spacesResponse.StatusCode == HttpStatusCode.OK)
         {
             if (!UtilityHelper.IsContentTypeExpected(spacesResponse.Content.Headers, "application/hal+json"))
             {
-                Console.WriteLine(spacesResponse);
                 AnsiConsole.MarkupLine($"[red]Please review your credentials, Unexpected response GET spaces endpoint[/]");
                 return new GetSpacesResult
                 {
@@ -431,7 +429,7 @@ public class ExploreHttpClient
         _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        var apisResponse = await _httpClient.GetAsync($"/spaces/{spaceId}/apis?page=0&size=2000");
+        var apisResponse = await _httpClient.GetAsync($"spaces/{spaceId}/apis?page=0&size=2000");
         if (apisResponse.StatusCode == HttpStatusCode.OK)
         {
             var apis = await apisResponse.Content.ReadFromJsonAsync<PagedApis>();
@@ -466,7 +464,7 @@ public class ExploreHttpClient
         _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Cookie", exploreCookie);
         _httpClient.DefaultRequestHeaders.Add("X-Xsrf-Token", $"{UtilityHelper.ExtractXSRFTokenFromCookie(exploreCookie)}");
-        var connectionsResponse = await _httpClient.GetAsync($"/spaces/{spaceId}/apis/{apiId}/connections?page=0&size=2000");
+        var connectionsResponse = await _httpClient.GetAsync($"spaces/{spaceId}/apis/{apiId}/connections?page=0&size=2000");
         if (connectionsResponse.StatusCode == HttpStatusCode.OK)
         {
             var connections = await connectionsResponse.Content.ReadFromJsonAsync<PagedConnections>();
