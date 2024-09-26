@@ -1,10 +1,6 @@
-using System;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Explore.Cli.Models.Explore;
-using System.Threading.Tasks;
-using System.CommandLine;
 using System.Net;
 using System.Net.Http.Json;
 using Spectre.Console;
