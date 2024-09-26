@@ -1,0 +1,1385 @@
+openapi: 3.0.0
+info:
+  title: Explore Spaces API
+  description: |
+    ## REST API for Managing Spaces and related resources for Explore
+    This API is intended for managing resources in Explore. Spaces, APIs, Connections.
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: apiexploration@smartbear.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/smartbear/explore-spaces-service/1.0.0
+  description: SwaggerHub API Auto Mocking
+- url: "https://{environment}/spaces-api/v1"
+  variables:
+    environment:
+      default: api.explore.swaggerhub.com
+      enum:
+      - api.explore.swaggerhub.com
+      - api.dev.explore.swaggerhub.com
+      - api.int.explore.swaggerhub.com
+security:
+- SbTokenDataAuth: []
+tags:
+- name: space
+  description: Operations related to connections spaces
+- name: api
+  description: Operations related to connections APIs
+- name: connection
+  description: Operations related to connections
+- name: export
+  description: Operations related to exports
+paths:
+  /spaces:
+    get:
+      tags:
+      - space
+      summary: Return a list of spaces for the current user
+      description: List all spaces of the current user
+      operationId: findSpaces
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: a list of spaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedSpaces'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    post:
+      tags:
+      - space
+      summary: create a new Space
+      description: Create a new Space for organising APIs.
+      operationId: createSpace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceRequest'
+      responses:
+        "201":
+          description: Space created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /spaces/{spaceId}:
+    get:
+      tags:
+      - space
+      summary: Get specific space
+      description: Get specific space by ID
+      operationId: getSpace
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Space
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    put:
+      tags:
+      - space
+      summary: Update a specific space
+      description: Update a specific space
+      operationId: updateSpace
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceRequest'
+      responses:
+        "200":
+          description: Space
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      tags:
+      - space
+      summary: Delete specific space
+      description: Delete specific space by ID
+      operationId: deleteSpace
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: removeSnapshots
+        in: query
+        description: |
+          If set to true, delete associated snapshots.
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        "204":
+          description: Space deleted
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /spaces/snapshot/{snapshotId}:
+    post:
+      tags:
+      - space
+      summary: Create a new space from a snapshot
+      description: Create a new space using the provided snapshot ID
+      operationId: createSpaceFromSnapshot
+      parameters:
+      - name: snapshotId
+        in: path
+        description: Snapshot ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceFromSnapshotRequest'
+      responses:
+        "200":
+          description: Space created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        "201":
+          description: Space created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Space'
+        "404":
+          description: The requested snapshot was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotNotFoundResponse'
+        "409":
+          description: The requested spase name already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceNameAlreadyExistsResponse'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /spaces/{spaceId}/apis:
+    get:
+      tags:
+      - api
+      summary: Return a list of apis contained in a space
+      description: List all apis of a specific space
+      operationId: findApis
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: a list of spaces
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedApis'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    post:
+      tags:
+      - api
+      summary: create a new API
+      description: Create a new API for organising connections.
+      operationId: createApi
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRequest'
+      responses:
+        "201":
+          description: API created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Api'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /spaces/{spaceId}/apis/{apiId}:
+    get:
+      tags:
+      - api
+      summary: Get API
+      description: Get API by ID
+      operationId: getApi
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: API
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Api'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    put:
+      tags:
+      - api
+      summary: Update API
+      description: Update the name of an API by ID
+      operationId: updateApi
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApiRequest'
+      responses:
+        "200":
+          description: API
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Api'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      tags:
+      - api
+      summary: Delete API
+      description: Delete API by ID
+      operationId: deleteApi
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: API deleted
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /spaces/{spaceId}/apis/{apiId}/connections:
+    get:
+      tags:
+      - connection
+      summary: Return connections for an API
+      description: Returns connections for the referenced API in paged format
+      operationId: getConnectionsForApi
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: A list of all the connections of the referenced API
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedConnections'
+    post:
+      tags:
+      - connection
+      summary: Create a new Connection
+      description: create a connection from an existing transaction
+      operationId: createConnection
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConnectionRequest'
+      responses:
+        "201":
+          description: Connection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkConnection'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /spaces/{spaceId}/apis/{apiId}/connections/{connectionId}:
+    get:
+      tags:
+      - connection
+      summary: Get connection
+      description: Get connection by ID
+      operationId: getConnection
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: connectionId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: Connection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkConnection'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    put:
+      tags:
+      - connection
+      summary: Update connection
+      description: Update connection by ID
+      operationId: updateConnection
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: connectionId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectionRequest'
+      responses:
+        "200":
+          description: Connection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkConnection'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      tags:
+      - connection
+      summary: Delete connection
+      description: Delete connection by ID
+      operationId: deleteConnection
+      parameters:
+      - name: spaceId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: apiId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: connectionId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: Connection deleted
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /spaces/snapshot:
+    post:
+      tags:
+      - space
+      summary: create a space snapshot
+      description: Create a new Snapshot for selected space
+      operationId: createSpaceSnapshot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceSnapshotRequest'
+      responses:
+        "201":
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpaceSnapshot'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  /exports:
+    get:
+      tags:
+      - export
+      summary: get all/search for exports
+      description: get all exports
+      parameters:
+      - name: apiId
+        in: query
+        description: Id of the API to filter by
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: size
+        in: query
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: A list of all the exports for the requested API
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedExports'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    post:
+      tags:
+      - export
+      summary: Export the given API in the specified definition format
+      description: Returns an API definition for the given API
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        "201":
+          description: API definition successfully exported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+        default:
+          description: The request failed.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+components:
+  schemas:
+    SnapshotNotFoundResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: https://api.explore.swaggerhub.com/spaces-api/v1/errors/SpaceSnapshotNotFound
+        title:
+          type: string
+          example: Not Found
+        detail:
+          type: string
+          example: Space snapshot with id 'a5782f8e-1c14-4f38-9cb8-27258e73cc53' not found
+        status:
+          type: integer
+          example: 404
+        snapshotId:
+          type: string
+          format: uuid
+    SpaceNameAlreadyExistsResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: https://api.explore.swaggerhub.com/spaces-api/v1/errors/SpaceNameAlreadyExists
+        title:
+          type: string
+          example: Not Found
+        detail:
+          type: string
+          example: Space snapshot named 'Default Space' already exists.
+        status:
+          type: integer
+          example: 409
+        spaceName:
+          type: string
+          example: Default Space Name
+        snapshotId:
+          type: string
+          format: uuid
+    CreateConnectionRequest:
+      type: object
+      # discriminator:
+      #   propertyName: type
+      # required:
+      #   - type
+    CreateConnectionFromTransactionRequest:
+      allOf:
+      - $ref: '#/components/schemas/CreateConnectionRequest'
+      - type: object
+        properties:
+          transactionId:
+            type: string
+            description: the id of the transaction to create a connection from
+            format: uuid
+    ConnectionRequest:
+      allOf:
+      - $ref: '#/components/schemas/CreateConnectionRequest'
+      - $ref: '#/components/schemas/Connection'
+    ApiRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of API to create
+        type:
+          type: string
+          enum:
+          - REST
+          - KAFKA
+        description:
+          type: string
+          description: Description of API
+          nullable: true
+    UpdateApiRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: New name of API
+          nullable: false
+        description:
+          type: string
+          description: Description of API
+          nullable: true
+    SpaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of Space to create
+    SpaceSnapshotRequest:
+      required:
+      - spaceId
+      type: object
+      properties:
+        spaceId:
+          type: string
+          description: Id of Space to create snapshot
+          format: uuid
+        shareAuth:
+          type: boolean
+          description: Enable sharing of Auth details in snapshot
+          default: false
+        oneTimeLink:
+          type: boolean
+          description: Create snapshot and link for one time use
+          default: true
+    SpaceFromSnapshotRequest:
+      type: object
+      properties:
+        mode:
+          type: string
+          description: space create mode
+          enum:
+          - CREATE
+          - OVERRIDE
+          - DUPLICATE
+    PagedSpaces:
+      properties:
+        _embedded:
+          $ref: '#/components/schemas/PagedSpaces__embedded'
+        _links:
+          $ref: '#/components/schemas/PagedLink'
+        page:
+          $ref: '#/components/schemas/Page'
+    PagedApis:
+      properties:
+        _embedded:
+          $ref: '#/components/schemas/PagedApis__embedded'
+        _links:
+          $ref: '#/components/schemas/PagedLink'
+        page:
+          $ref: '#/components/schemas/Page'
+    PagedConnections:
+      properties:
+        _embedded:
+          $ref: '#/components/schemas/PagedConnections__embedded'
+        _links:
+          $ref: '#/components/schemas/PagedLink'
+        page:
+          $ref: '#/components/schemas/Page'
+    Space:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        _links:
+          $ref: '#/components/schemas/Link'
+    Api:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          description: the type of the API
+          example: REST
+        description:
+          type: string
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Server'
+        _links:
+          $ref: '#/components/schemas/Link'
+    Server:
+      type: object
+      properties:
+        url:
+          type: string
+    LinkConnection:
+      allOf:
+      - $ref: '#/components/schemas/Connection'
+      - type: object
+        properties:
+          _links:
+            $ref: '#/components/schemas/Link'
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cd357463-613b-4fe6-81d8-4f716fe2dc42
+        date:
+          type: string
+          format: date-time
+          readOnly: true
+          example: 2017-07-21T17:32:28Z
+        operationData:
+          type: object
+          example:
+            type: REST
+            connection:
+              name: My Connection
+              schema: OpenAPI
+              schemaVersion: 3.0.1
+              connectionDefinition:
+                openapi: 3.0.1
+                servers:
+                - url: http://example.com
+                paths:
+                  /somePath:
+                    get: {}
+              settings:
+                type: RestConnectionSettings
+                connectTimeout: 10
+                followRedirects: true
+                encodeUrl: false
+                enableHttp2: false
+        status:
+          type: string
+          example: SUCCESS
+        statusDetails:
+          type: string
+        _links:
+          $ref: '#/components/schemas/Link'
+    ExportRequest:
+      required:
+      - apiId
+      - format
+      - title
+      - version
+      type: object
+      properties:
+        apiId:
+          type: string
+          description: The id of the API to export. Will add all endpoints of the API to the exported API definition.
+          format: uuid
+        version:
+          type: string
+          description: "The version of the exported API, will be added in the info section of the exported API definition."
+          example: 1.0.0
+        title:
+          type: string
+          description: "The title of the exported API, will be added in the info section of the exported API definition."
+          example: My exported API
+        format:
+          type: string
+          description: The specification format of the exported API
+          enum:
+          - OPENAPI_30
+    Export:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "The ID of the export, can be used to retrieve metadata about the export"
+          format: uuid
+        createdAt:
+          type: string
+          description: The date and time when the export was created
+          format: date-time
+        definition:
+          type: object
+          example: |
+            {
+              "openapi":"3.0.1",
+              "servers":[
+                {
+                 "url":"http://example.com"
+                }
+              ],
+              "paths":{
+                "/somePath":{
+                  "get":{}
+                }
+              }
+            }
+        _links:
+          $ref: '#/components/schemas/Link'
+    PagedExports:
+      properties:
+        _embedded:
+          $ref: '#/components/schemas/PagedExports__embedded'
+        _links:
+          $ref: '#/components/schemas/PagedLink'
+        page:
+          $ref: '#/components/schemas/Page'
+    SpaceSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        spaceId:
+          type: string
+          description: The id of the space for which this snapshot was created
+          format: uuid
+        isOneTime:
+          type: boolean
+          description: Flag to check if this snapshot can be used only once
+        shareAuth:
+          type: boolean
+          description: Flag to check if this snapshot includes auth settings
+        createdAt:
+          type: string
+          description: The date and time when the snapshot was created
+          format: date-time
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          description: A URI reference that identifies the problem type
+          format: uri
+          example: https://api.smartbear.com/problems/missing-body-property
+        title:
+          type: string
+          description: A short summary of the problem type
+          example: Your request is missing a required request body property
+        detail:
+          type: string
+          description: An explanation specific to this occurrence of the problem
+          example: "Your request does not contain the required property {propertyName}"
+        status:
+          type: integer
+          description: The status code for this occurrence of the problem
+          example: 400
+    Connection:
+      required:
+      - connectionDefinition
+      - schema
+      - schemaVersion
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: example.com REST Connection
+        schema:
+          type: string
+          description: unique identifier of the schema for this connection
+          enum:
+          - OpenAPI
+          - AsyncAPI
+          - Internal
+        schemaVersion:
+          type: string
+          example: 3.0.3
+        description:
+          type: string
+        connectionDefinition:
+          type: object
+          description: The actual connection object. Must conform to the referenced schema.
+        createdBy:
+          type: string
+          readOnly: true
+        createdTime:
+          type: string
+          format: date-time
+          readOnly: true
+          example: 2021-01-01T00:00:00Z
+        modifiedBy:
+          type: string
+          readOnly: true
+        modifiedTime:
+          type: string
+          format: date-time
+          readOnly: true
+          example: 2021-01-01T00:00:00Z
+      description: Describes a connection
+    BasicAuthCredentials:
+      allOf:
+      - $ref: '#/components/schemas/UsernamePasswordCredentials'
+    UsernamePasswordCredentials:
+      allOf:
+      - $ref: '#/components/schemas/Credentials'
+      - type: object
+        properties:
+          username:
+            type: string
+            description: The username used to authenticate the request
+            example: admin
+          password:
+            type: string
+            description: The password used to authenticate the request
+            format: password
+            example: admin
+    Credentials:
+      type: object
+      # discriminator:
+      #   propertyName: type
+      # required:
+      #   - type
+    SaslPlainSslCredentials:
+      allOf:
+      - $ref: '#/components/schemas/UsernamePasswordCredentials'
+    SaslPlainCredentials:
+      allOf:
+      - $ref: '#/components/schemas/UsernamePasswordCredentials'
+    TokenCredentials:
+      allOf:
+      - $ref: '#/components/schemas/Credentials'
+      - type: object
+        properties:
+          token:
+            type: string
+            description: The token used to authenticate the request
+            format: password
+            example: bearerToken
+    ApiKeyCredentials:
+      allOf:
+      - $ref: '#/components/schemas/Credentials'
+      - type: object
+        properties:
+          apiKey:
+            type: string
+            description: The API Key used to authenticate the request
+            format: password
+            example: apiKey
+    RestConnectionSettings:
+      allOf:
+      - $ref: '#/components/schemas/Settings'
+      - type: object
+        properties:
+          encodeUrl:
+            type: boolean
+            description: "Encode the server, path and query parameters"
+            default: true
+          followRedirects:
+            type: boolean
+            description: Follow HTTP 3xx responses as redirects
+            default: false
+          enableHttp2:
+            type: boolean
+            description: Enable HTTP/2 support
+            default: false
+          followOriginalHttpMethod:
+            type: boolean
+            description: Redirect with the original HTTP method instead of the default behavior of redirecting with GET
+            example: false
+          connectTimeout:
+            minimum: 1
+            type: integer
+            description: Sets the connect timeout duration for this request in seconds
+            example: 10
+    Settings:
+      type: object
+      # discriminator:
+      #   propertyName: type
+      # required:
+      #   - type
+    KafkaConnectionSettings:
+      allOf:
+      - $ref: '#/components/schemas/Settings'
+      - type: object
+        properties:
+          closeSubscriptionSettings:
+            $ref: '#/components/schemas/CloseSubscriptionSettings'
+          serializationSettings:
+            $ref: '#/components/schemas/SerializationSettings'
+          consumerConfigurations:
+            type: object
+            additionalProperties: true
+            description: "Consumer Configuration Parameters - described [here](https://kafka.apache.org/documentation/#consumerconfigs)"
+          producerConfigurations:
+            type: object
+            additionalProperties: true
+            description: "Producer Configuration Parameters - described [here](https://kafka.apache.org/documentation/#producerconfigs)"
+    CloseSubscriptionSettings:
+      type: object
+      properties:
+        closeSubscriptionOn:
+          type: string
+          description: Will close subscription when either one of or all of the parameters is met
+          default: ONE_OF
+          enum:
+          - ONE_OF
+          - ALL_OF
+        idleTime:
+          maximum: 3600
+          minimum: 1
+          type: integer
+          description: The amount of time the subscription has been open without messages (seconds)
+          default: 60
+        runTime:
+          maximum: 3600
+          minimum: 1
+          type: integer
+          description: The amount of time the subscription will stay open (seconds)
+          default: 60
+        messagesReceived:
+          maximum: 500
+          minimum: 1
+          type: integer
+          description: The number of messages to receive before closing the subscription
+          default: 50
+    SerializationSettings:
+      required:
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          description: The type of serializer/deserializer to use
+          enum:
+          - string
+          - avro
+          - protobuf
+        schemaRegistryUrl:
+          type: string
+          description: The url of the schema registry if needed
+          format: uri
+          example: http://example.com:8081
+    PagedLink:
+      type: object
+      properties:
+        first:
+          $ref: '#/components/schemas/PagedLink_first'
+        prev:
+          $ref: '#/components/schemas/PagedLink_first'
+        self:
+          $ref: '#/components/schemas/PagedLink_first'
+        next:
+          $ref: '#/components/schemas/PagedLink_first'
+        last:
+          $ref: '#/components/schemas/PagedLink_first'
+    Page:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        size:
+          type: integer
+          format: int64
+        number:
+          type: integer
+          format: int64
+    Link:
+      type: object
+      properties:
+        self:
+          $ref: '#/components/schemas/Link_self'
+    PagedSpaces__embedded:
+      type: object
+      properties:
+        spaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/Space'
+    PagedApis__embedded:
+      type: object
+      properties:
+        apis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Api'
+    PagedConnections__embedded:
+      type: object
+      properties:
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkConnection'
+    PagedExports__embedded_exports:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          description: The date and time when the export was created
+          format: date-time
+    PagedExports__embedded:
+      type: object
+      properties:
+        exports:
+          type: array
+          items:
+            $ref: '#/components/schemas/PagedExports__embedded_exports'
+    PagedLink_first:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+    Link_self:
+      type: object
+      properties:
+        href:
+          type: string
+  responses:
+    ErrorResponse:
+      description: The request failed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    SnapshotNotFoundErrorResponse:
+      description: The requested snapshot was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SnapshotNotFoundResponse'
+    SpaceNameAlreadyExistsErrorResponse:
+      description: The requested spase name already exists.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SpaceNameAlreadyExistsResponse'
+  parameters:
+    SpaceId:
+      name: spaceId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        format: uuid
+    ApiId:
+      name: apiId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        format: uuid
+    ConnectionId:
+      name: connectionId
+      in: path
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        format: int64
+    Size:
+      name: size
+      in: query
+      schema:
+        type: integer
+        format: int64
+  securitySchemes:
+    SbTokenDataAuth:
+      type: apiKey
+      description: A JWT token that contains email and other basic information about the logged in user.
+      name: x-xsrf-token
+      in: header
