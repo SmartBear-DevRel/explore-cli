@@ -1,0 +1,235 @@
+{
+	"info": {
+		"_postman_id": "ad365ee6-44ef-4ce1-84e8-86894f4713ff",
+		"name": "Payees API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "304136"
+	},
+	"item": [
+		{
+			"name": "Irish Payees",
+			"item": [
+				{
+					"name": "GET Irish LTD companies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response time is less than 1000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Your test name\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.data[0].bank_account_currency).to.eql(\"EUR\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net/api/payees?country_of_registration=IE&name=ltd",
+							"protocol": "https",
+							"host": [
+								"sbdevrel-fua-smartbearcoin-prd",
+								"azurewebsites",
+								"net"
+							],
+							"path": [
+								"api",
+								"payees"
+							],
+							"query": [
+								{
+									"key": "country_of_registration",
+									"value": "IE"
+								},
+								{
+									"key": "name",
+									"value": "ltd"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET Payee Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response time is less than 1000ms\", function () {\r",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Your test name\", function () {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    pm.expect(jsonData.data[0].bank_account_currency).to.eql(\"EUR\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net/api/payees/4eb603f3-e7e7-47b1-a5df-557b6204616e",
+							"protocol": "https",
+							"host": [
+								"sbdevrel-fua-smartbearcoin-prd",
+								"azurewebsites",
+								"net"
+							],
+							"path": [
+								"api",
+								"payees",
+								"4eb603f3-e7e7-47b1-a5df-557b6204616e"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "GET DE companies",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response time is less than 1000ms\", function () {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Your test name\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.data[0].bank_account_currency).to.eql(\"EUR\");\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "oauth2",
+					"oauth2": [
+						{
+							"key": "addTokenTo",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://sbdevrel-fua-smartbearcoin-prd.azurewebsites.net/api/payees?country_of_registration=IE&name=ltd",
+					"protocol": "https",
+					"host": [
+						"sbdevrel-fua-smartbearcoin-prd",
+						"azurewebsites",
+						"net"
+					],
+					"path": [
+						"api",
+						"payees"
+					],
+					"query": [
+						{
+							"key": "country_of_registration",
+							"value": "IE"
+						},
+						{
+							"key": "name",
+							"value": "ltd"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://www.dneonline.com/calculator.asmx",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "SOAPAction",
+						"value": "http://tempuri.org/Add",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "text/xml",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<soap:Envelope\r\n    xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\"\r\n    xmlns:tem=\"http://tempuri.org/\">\r\n    <soap:Header/>\r\n    <soap:Body>\r\n        <tem:Add>\r\n            <tem:intA>10</tem:intA>\r\n            <tem:intB>10</tem:intB>\r\n        </tem:Add>\r\n    </soap:Body>\r\n</soap:Envelope>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://www.dneonline.com/calculator.asmx",
+					"protocol": "http",
+					"host": [
+						"www",
+						"dneonline",
+						"com"
+					],
+					"path": [
+						"calculator.asmx"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

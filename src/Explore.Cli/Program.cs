@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Linq;
 using Spectre.Console;
 using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Postman;
@@ -132,7 +133,7 @@ internal class Program
 
             if (!validationResult.isValid)
             {
-                Console.WriteLine($"The provide json does not conform to the expected schema. Errors: {validationResult.Message}");
+                Console.WriteLine($"The provided json does not conform to the expected schema. Errors: {validationResult.Message}");
                 return;
             }
 
@@ -156,6 +157,7 @@ internal class Program
 
                 var cleanedCollectionName = UtilityHelper.CleanString(postmanCollection.Info?.Name);
                 var createSpacesResult = await exploreHttpClient.CreateSpace(exploreCookie, cleanedCollectionName);
+
                 if (createSpacesResult.Result)
                 {
                     var apiImportResults = new Table() { Title = new TableTitle(text: $"SPACE [green]{cleanedCollectionName}[/] CREATED"), Width = 75, UseSafeBorder = true };
@@ -163,30 +165,38 @@ internal class Program
                     apiImportResults.AddColumn("API Imported");
                     apiImportResults.AddColumn("Connection Imported");
 
-                    //Postman Items cant contain nested items, so we can flatten the list
-                    var flattenedItems = PostmanCollectionMappingHelper.FlattenItems(postmanCollection.Item);
+                    var apisToImport = PostmanCollectionMappingHelper.MapPostmanCollectionToStagedAPI(postmanCollection, cleanedCollectionName);
 
-                    foreach (var item in flattenedItems)
+                    foreach (var item in apisToImport)
                     {
-                        if (item.Request != null)
+                        if (item.APIName == null || item.Connections == null)
                         {
-                            //check if request format is supported
-                            if (!PostmanCollectionMappingHelper.IsItemRequestModeSupported(item.Request))
-                            {
-                                apiImportResults.AddRow("[orange3]skipped[/]", $"Item '{item.Name}' skipped", $"Request method not supported");
-                                continue;
-                            }
+                            apiImportResults.AddRow("[orange3]skipped[/]", $"API '{item.APIName ?? "Unknown"}' skipped", $"No supported request found in collection");
+                            continue;
+                        }
 
-                            //now let's create an API entry in the space
-                            var cleanedAPIName = UtilityHelper.CleanString(item.Name);
-                            var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "postman", item.Request.Description?.Content);
+                        AnsiConsole.MarkupLine($"Processing API: {item.APIName} with {item.Connections.Count} connections");
 
-                            if (createApiEntryResult.Result)
+                        if(item.Connections == null || item.Connections.Count == 0)
+                        {
+                            apiImportResults.AddRow("[orange3]skipped[/]", $"API '{item.APIName}' skipped", $"No supported request found in collection");
+                            continue;
+                        }
+
+                        //now let's create an API entry in the space
+                        var cleanedAPIName = UtilityHelper.CleanString(item.APIName);
+                        //var description = item.Connections.FirstOrDefault(c => c.Description != null)?.Description?.Content;
+
+                        var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "postman", null);
+                       
+                        if(createApiEntryResult.Result)
+                        {
+                            foreach(var connection in item.Connections)
                             {
-                                var connectionRequestBody = JsonSerializer.Serialize(PostmanCollectionMappingHelper.MapPostmanCollectionItemToExploreConnection(item));
+                                var connectionRequestBody = JsonSerializer.Serialize(connection);
                                 //now let's do the work and import the connection
                                 var createConnectionResponse = await exploreHttpClient.CreateApiConnection(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, connectionRequestBody);
-
+    
                                 if (createConnectionResponse.Result)
                                 {
                                     apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
@@ -196,13 +206,13 @@ internal class Program
                                     apiImportResults.AddRow("[orange3]OK[/]", $"API '{cleanedAPIName}' created", "[orange3]Connection NOT created[/]");
                                 }
                             }
-                            else
-                            {
-                                apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {createApiEntryResult.StatusCode}", "");
-                            }
                         }
-                    }
+                        else
+                        {
+                            apiImportResults.AddRow("[red]NOK[/]", $"API creation failed. StatusCode {createApiEntryResult.StatusCode}", "");
+                        }                       
 
+                    }
 
                     resultTable.AddRow(new Markup("[green]success[/]"), apiImportResults);
 
@@ -255,9 +265,9 @@ internal class Program
 
             //ToDo - deal with scenario of item-groups
         }
-        catch (FileNotFoundException)
+        catch (FileNotFoundException ex)
         {
-            Console.WriteLine("File not found.");
+            Console.WriteLine($"File not found: {ex.Message}");
         }
         catch (Exception ex)
         {

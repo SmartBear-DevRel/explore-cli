@@ -1,5 +1,6 @@
 using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Postman;
+using Explore.Cli.Models;
 using System.Text.Json;
 
 public class PostmanCollectionMappingHelperTests
@@ -120,5 +121,45 @@ public class PostmanCollectionMappingHelperTests
         Assert.Equal("Get authenticated user", postmanCollection?.Item?[0].ItemList?[0].Name);
         Assert.Equal("GET", postmanCollection?.Item?[0].ItemList?[0].Request?.Method?.ToString());
         Assert.Equal("Gets information about the authenticated user.", postmanCollection?.Item?[0].ItemList?[0].Request?.Description?.Content?.ToString());
+    }
+
+    [Fact]
+    public void ProcessNestedCollections_ShouldReturnTwoStagedAPIs()
+    {
+        // Arrange
+        var filePath = "../../../fixtures/API_.Payees_API.postman_collection.json";
+        var mockCollectionAsJson = File.ReadAllText(filePath);
+        var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(mockCollectionAsJson);
+
+        // Act
+        List<StagedAPI> result = new List<StagedAPI>();
+        if (postmanCollection != null)
+        {
+            result = PostmanCollectionMappingHelper.MapPostmanCollectionToStagedAPI(postmanCollection, "Payees API");
+        }
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<List<StagedAPI>>(result);
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void ProcessNestedCollections_ShouldReturnMultipleStagedAPIs()
+    {
+        // Arrange
+        var filePath = "../../../fixtures/API.Payees_API_mixed_urls.postman_collection.json";
+        var mockCollectionAsJson = File.ReadAllText(filePath);
+        var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(mockCollectionAsJson);
+
+        // Act
+        List<StagedAPI> result = new List<StagedAPI>();
+        if (postmanCollection != null)
+        {
+            result = PostmanCollectionMappingHelper.MapPostmanCollectionToStagedAPI(postmanCollection, "Payees API");
+        }
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<List<StagedAPI>>(result);
+        Assert.Equal(2, result.Count);
     }
 }
