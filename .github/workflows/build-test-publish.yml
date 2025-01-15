@@ -69,7 +69,9 @@ jobs:
         uses: NuGet/setup-nuget@v1.0.5
 
       - name: setup mono
-        run: brew install mono
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew install mono
 
       - name: Publish to Nuget
         run: nuget push **\*.nupkg -Source 'https://api.nuget.org/v3/index.json' -ApiKey $NUGET_API_KEY
