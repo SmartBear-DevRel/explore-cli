@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Explore Spaces API
   description: |
-    ## REST API for Managing Spaces and related resources for Explore
+    ## REST API for Managing Spaces and related resources for Explore 
     This API is intended for managing resources in Explore. Spaces, APIs, Connections.
   termsOfService: http://swagger.io/terms/
   contact:
