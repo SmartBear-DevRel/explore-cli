@@ -257,7 +257,8 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
 > **Notes:**
 > - Compatible with Postman Collections v2.1
-> - Nested collections get flattened into a single Explore space
+> - Root level request get bundled into API folder with same name as collection
+> - Nested collections get added to an API folder with naming format (`parent folder - nested folder`)
 > - GraphQL collections/requests not supported
 > - Environments, Authorization data (not including explicit headers), Pre-request Scripts, Tests are not included in import
 
@@ -297,7 +298,6 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 > - gRPC collections/requests are not supported
 > - Environments variables are inlined and set within the Explore Space
 > - Authorization - only Basic and Bearer Token variants are supported
-
 
 ### Running the `import-pact-file` command
 

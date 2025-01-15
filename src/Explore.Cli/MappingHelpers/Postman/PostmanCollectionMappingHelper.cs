@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Postman;
+using Explore.Cli.Models;
 
 public static class PostmanCollectionMappingHelper
 {
@@ -288,5 +289,92 @@ public static class PostmanCollectionMappingHelper
         }
 
         return false;
+    }
+
+    public static List<Connection> MapPostmanCollectionItemsToExploreConnections(Item collectionItem)
+    {
+        var connections = new List<Connection>();
+
+        if(collectionItem.Request != null && IsItemRequestModeSupported(collectionItem.Request))
+        {
+            connections.Add(MapPostmanCollectionItemToExploreConnection(collectionItem));
+        }
+
+        // if nested item exists, then add it to the connections list if it has request data
+        if (collectionItem.ItemList != null)
+        {
+            foreach(var item in collectionItem.ItemList)
+            {
+                if(item.Request != null && IsItemRequestModeSupported(item.Request))
+                {
+                    connections.Add(MapPostmanCollectionItemToExploreConnection(item));
+                }
+            }
+        }
+
+        return connections;
+    }
+
+    public static List<StagedAPI> MapPostmanCollectionToStagedAPI(PostmanCollection postmanCollection, string rootName)
+    {
+        var stagedAPIs = new List<StagedAPI>();
+
+        stagedAPIs.Add(new StagedAPI()
+        {
+            APIName = rootName,
+        });
+
+
+        if(postmanCollection.Item != null)
+        {
+            foreach(var item in postmanCollection.Item)
+            {
+
+                if(item.Request != null && IsItemRequestModeSupported(item.Request))
+                {
+                    StagedAPI api = new StagedAPI()
+                    {
+                        APIName = item.Name ?? string.Empty,
+                        APIUrl = GetServerUrlFromItemRequest(item.Request),
+                        Connections = MapPostmanCollectionItemsToExploreConnections(item)
+                    };
+
+                    //if an API with same name already exists, add the connection to the existing API
+                    var existingAPI = stagedAPIs.FirstOrDefault(x => x.APIName == rootName);
+                    if(existingAPI != null)
+                    {
+                        existingAPI.Connections.AddRange(api.Connections);
+                    }
+                    else
+                    {
+                        stagedAPIs.Add(new StagedAPI()
+                        {
+                            APIUrl = api.APIUrl,
+                            APIName = api.APIName,
+                            Connections = api.Connections
+                        });
+                    }
+                }
+
+                // if nested item exists, then add it to the staged API list
+                if (item.ItemList != null)
+                {
+                    PostmanCollection tempCollection = new PostmanCollection()
+                    {
+                        Item = item.ItemList,
+                        Info = postmanCollection.Info
+                    };
+
+                    if (tempCollection.Info != null)
+                    {
+                        tempCollection.Info.Name = item.Name;
+                    }
+
+                    stagedAPIs.AddRange(MapPostmanCollectionToStagedAPI(tempCollection, $"{rootName} - {item.Name}"));
+                }
+            }
+        }
+
+        return stagedAPIs;
     }
 }
