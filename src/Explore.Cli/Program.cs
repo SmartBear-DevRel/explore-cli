@@ -69,12 +69,12 @@ internal class Program
         var baseUri = new Option<string>(name: "--base-uri", description: "The base uri to use for all imported requests. ie: http://localhost:3000") { IsRequired = false };
         baseUri.AddAlias("-b");
         var ignorePactFileSchemaValidationResult = new Option<bool>(name: "--ignore-pact-schema-verification-result", description: "Ignore pact schema verification result, performed prior to upload") { IsRequired = false };
-        var importPactFileCommand = new Command("import-pact-file") { exploreCookie, importFilePath, baseUri, verbose };
+        var importPactFileCommand = new Command("import-pact-file") { exploreCookie, importFilePath, baseUri, verbose, ignorePactFileSchemaValidationResult };
         importPactFileCommand.Description = "Import a Pact file (v2/v3/v4) into SwaggerHub Explore (HTTP interactions only)";
         rootCommand.Add(importPactFileCommand);
 
         importPactFileCommand.SetHandler(async (ec, fp, b, v, ignorePactFileSchemaValidationResult) =>
-        { await ImportPactFile(ec, fp, b, v); }, exploreCookie, importFilePath, baseUri, verbose, ignorePactFileSchemaValidationResult);
+        { await ImportPactFile(ec, fp, b, v, ignorePactFileSchemaValidationResult); }, exploreCookie, importFilePath, baseUri, verbose, ignorePactFileSchemaValidationResult);
 
         AnsiConsole.Write(new FigletText("Explore.Cli").Color(new Color(133, 234, 45)));
 
