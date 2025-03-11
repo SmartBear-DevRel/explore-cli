@@ -66,7 +66,7 @@ public static class PactMappingHelper
                 };
 
                 // //add request body
-                if (v4Request.Body.Content != null)
+                if (v4Request.Body?.Content != null)
                 {
                     var examplesJson = new Dictionary<string, object>
                 {
