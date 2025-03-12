@@ -144,6 +144,39 @@ public class PostmanCollectionMappingHelperTests
     }
 
     [Fact]
+    public void ProcessesLongDescriptions()
+    {
+        // Arrange
+        var filePath = "../../../fixtures/API_.descriptions_postman_collection.json";
+        var mockCollectionAsJson = File.ReadAllText(filePath);
+        var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(mockCollectionAsJson);
+        // Act
+        Assert.Equal("Get data", postmanCollection?.Item?[0].Name);
+        Assert.Equal("GET", postmanCollection?.Item?[0].Request?.Method?.ToString());
+        Assert.Equal("This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data.", postmanCollection?.Item?[0].Request?.Description?.Content?.ToString());
+    }
+
+    [Fact]
+    public void ProcessNestedCollections_ShouldParseDescriptions()
+    {
+        // Arrange
+        var filePath = "../../../fixtures/API_.descriptions_postman_collection.json";
+        var mockCollectionAsJson = File.ReadAllText(filePath);
+        var postmanCollection = JsonSerializer.Deserialize<PostmanCollection>(mockCollectionAsJson);
+
+        // Act
+        List<StagedAPI> result = new List<StagedAPI>();
+        if (postmanCollection != null)
+        {
+            result = PostmanCollectionMappingHelper.MapPostmanCollectionToStagedAPI(postmanCollection, "REST API");
+        }
+        // Assert
+        Assert.NotNull(result);
+        Assert.IsType<List<StagedAPI>>(result);
+        Assert.Single(result.Count);
+    }    
+
+    [Fact]
     public void ProcessNestedCollections_ShouldReturnMultipleStagedAPIs()
     {
         // Arrange

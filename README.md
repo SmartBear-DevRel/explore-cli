@@ -88,11 +88,13 @@ Dockerfiles are provided for amd64 & arm64 flavours
 
 ##### Building images
 
+You can build the Docker images with a specific Explore.CLI version by passing the `VERSION` build argument. If the `VERSION` argument is not provided, the default value specified in the Dockerfile will be used.
+
 ```sh
-docker build . --platform=linux/arm64 -f Dockerfile.debian  -t explore-cli:debian-arm64
-docker build . --platform=linux/arm64 -f Dockerfile.debian  -t explore-cli:debian-amd64
-docker build . --platform=linux/arm64 -f Dockerfile.alpine  -t explore-cli:alpine-arm64
-docker build . --platform=linux/arm64 -f Dockerfile.alpine  -t explore-cli:alpine-amd64
+docker build . --platform=linux/arm64 -f Dockerfile.debian  -t explore-cli:debian-arm64 --build-arg VERSION=<VERSION>
+docker build . --platform=linux/arm64 -f Dockerfile.debian  -t explore-cli:debian-amd64 --build-arg VERSION=<VERSION>
+docker build . --platform=linux/arm64 -f Dockerfile.alpine  -t explore-cli:alpine-arm64 --build-arg VERSION=<VERSION>
+docker build . --platform=linux/arm64 -f Dockerfile.alpine  -t explore-cli:alpine-amd64 --build-arg VERSION=<VERSION>
 ```
 
 ##### Using images
