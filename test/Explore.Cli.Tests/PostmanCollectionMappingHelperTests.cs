@@ -173,7 +173,7 @@ public class PostmanCollectionMappingHelperTests
         // Assert
         Assert.NotNull(result);
         Assert.IsType<List<StagedAPI>>(result);
-        Assert.Single(result.Count);
+        Assert.Single(result);
     }    
 
     [Fact]
