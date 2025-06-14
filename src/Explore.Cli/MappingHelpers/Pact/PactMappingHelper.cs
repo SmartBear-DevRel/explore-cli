@@ -90,7 +90,7 @@ public static class PactMappingHelper
                 {
                     var methodJson = new Dictionary<string, object>
                 {
-                    { v4Request.Method?.ToString()?.Replace("Method", string.Empty) ?? string.Empty, pathsContent }
+                    { v4Request.Method?.ToString()?.Replace("Method", string.Empty).ToLower() ?? string.Empty, pathsContent }
                 };
 
                     var json = new Dictionary<string, object>
@@ -138,7 +138,7 @@ public static class PactMappingHelper
                 {
                     var methodJson = new Dictionary<string, object>
                 {
-                    { v3Request.Method?.ToString()?.Replace("Method", string.Empty) ?? string.Empty, pathsContent }
+                    { v3Request.Method?.ToString()?.Replace("Method", string.Empty).ToLower() ?? string.Empty, pathsContent }
                 };
 
                     var json = new Dictionary<string, object>
@@ -186,7 +186,7 @@ public static class PactMappingHelper
                 {
                     var methodJson = new Dictionary<string, object>
                 {
-                    { v2Request.Method?.ToString()?.Replace("Method", string.Empty) ?? string.Empty, pathsContent }
+                    { v2Request.Method?.ToString()?.Replace("Method", string.Empty).ToLower() ?? string.Empty, pathsContent }
                 };
 
                     var json = new Dictionary<string, object>

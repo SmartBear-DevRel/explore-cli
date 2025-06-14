@@ -1,5 +1,5 @@
 FROM debian:12-slim
-ARG VERSION=0.8.1
+ARG VERSION=0.8.2
 RUN apt update && apt install -y curl libicu-dev
 
 RUN if [ "$(uname -m)" = "aarch64" ]; then \
