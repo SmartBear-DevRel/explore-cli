@@ -93,7 +93,7 @@ public static class PactMappingHelper
                     { v4Request.Method?.ToString()?.Replace("Method", string.Empty).ToLower() ?? string.Empty, pathsContent }
                 };
 
-                    var json = new Dictionary<string, object>
+                var json = new Dictionary<string, object>
                 {
                     { v4Request.Path, methodJson }
                 };
@@ -390,6 +390,87 @@ public static class PactMappingHelper
         return parameters;
     }
 
+
+    public static ApiRequestV2 MapPactInteractionToApiRequestV2(object pactInteraction, string url = "")
+    {
+        var apiRequest = new ApiRequestV2()
+        {
+            ServerURLs = new string[] { url },
+            Description = "Imported via Explore.CLI",
+        };
+
+        if (pactInteraction is PactV2.Interaction v2Interaction)
+        { 
+            apiRequest.Name = UtilityHelper.CleanString(v2Interaction.Description.ToString());
+        }
+        else if (pactInteraction is PactV3.Interaction v3Interaction)
+        {
+            apiRequest.Name = UtilityHelper.CleanString(v3Interaction.Description.ToString());
+        }
+        else if (pactInteraction is PactV4.Interaction v4Interaction)
+        {
+            apiRequest.Name = UtilityHelper.CleanString(v4Interaction.Description.ToString());
+        }
+
+        // trim the Name to max 60 characters
+        if (apiRequest.Name?.Length > 60)
+        {
+            apiRequest.Name = apiRequest.Name.Substring(0, 60);
+        }
+        return apiRequest;
+    }
+
+    public static Endpoint MapPactInteractionToExploreEndpoint(object pactInteraction, string url = "")
+    {
+        var endpoint = new Endpoint()
+        {
+            Connection = new Connection()
+            {
+                Type = "ConnectionRequest",
+                Name = "REST",
+                Schema = "OpenAPI",
+                SchemaVersion = "3.0.1",
+                ConnectionDefinition = new ConnectionDefinition()
+                {
+                    Servers = new List<Server>()
+                    {
+                        new Server()
+                        {
+                            Url = url
+                        }
+                    },
+                },
+                Settings = new Settings()
+                {
+                    Type = "RestConnectionSettings",
+                    ConnectTimeout = 30,
+                    FollowRedirects = true,
+                    EncodeUrl = true
+                },
+            }
+        };
+
+        if (pactInteraction is PactV2.Interaction v2Interaction)
+        {
+            endpoint.Path = v2Interaction.Request.Path;
+            endpoint.Method = v2Interaction.Request.Method?.ToString()?.Replace("Method", string.Empty).ToUpperInvariant();
+            endpoint.Connection.ConnectionDefinition.Paths = CreatePactPathsDictionary(v2Interaction.Request);
+        }
+        else if (pactInteraction is PactV3.Interaction v3Interaction)
+        {
+            endpoint.Path = v3Interaction.Request.Path;
+            endpoint.Method = v3Interaction.Request.Method?.ToString()?.Replace("Method", string.Empty).ToUpperInvariant();
+            endpoint.Connection.ConnectionDefinition.Paths = CreatePactPathsDictionary(v3Interaction.Request);
+        }
+        else if (pactInteraction is PactV4.Interaction v4Interaction)
+        {
+            endpoint.Path = v4Interaction.Request.Path;
+            endpoint.Method = v4Interaction.Request.Method?.ToString()?.Replace("Method", string.Empty).ToUpperInvariant();
+            endpoint.Connection.ConnectionDefinition.Paths = CreatePactPathsDictionary(v4Interaction.Request);
+        }
+
+        return endpoint;
+    }
 
     public static Connection MapPactInteractionToExploreConnection(object pactInteraction, string url = "")
     {

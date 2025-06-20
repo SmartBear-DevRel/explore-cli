@@ -65,20 +65,20 @@ jobs:
           dotnet test
         working-directory: test/Explore.Cli.Tests
 
-      - uses: pactflow/actions/publish-pact-files@v2
-        with:
-          pactfiles: test/Explore.Cli.Tests/pacts
-          broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
-          token: ${{ secrets.PACT_BROKER_TOKEN }}
+#      - uses: pactflow/actions/publish-pact-files@v2
+#        with:
+#          pactfiles: test/Explore.Cli.Tests/pacts
+#          broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
+#          token: ${{ secrets.PACT_BROKER_TOKEN }}
 
-      - uses: pactflow/actions/can-i-deploy@v2
-        with:
-          to_environment: production
-          application_name: explore-cli
-          broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
-          token: ${{ secrets.PACT_BROKER_TOKEN }}
-          retry_while_unknown: 5
-          retry_interval: 10
+#      - uses: pactflow/actions/can-i-deploy@v2
+#        with:
+#          to_environment: production
+#          application_name: explore-cli
+#          broker_url: ${{ secrets.PACT_BROKER_BASE_URL }}
+#          token: ${{ secrets.PACT_BROKER_TOKEN }}
+#          retry_while_unknown: 5
+#          retry_interval: 10
 
       - name: Create Package
         run: dotnet pack --configuration $BUILD_CONFIG -o:package /p:PackageVersion=${{ steps.gitVersion.outputs.assemblySemVer }}

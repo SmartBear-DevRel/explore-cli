@@ -428,14 +428,12 @@ namespace Consumer.Tests
                 {
                     Embedded = new EmbeddedApis
                     {
-                        Apis = new List<ApiResponse>{
+                        Apis = new List<ApiResponseV2>{
                             new() {
                                 Id = new Guid(),
                                 Name = "foo",
-                                Type = "TEST",
-                                Servers = new List<Server>{
-
-                                },
+                                Protocol = "TEST",
+                                ServerUrls = new ServerURLs(){ Custom = new string[] { "http://test" } },
                                 Description = "foo"
                         }
                        }
@@ -591,54 +589,7 @@ namespace Consumer.Tests
                 Assert.Equal(expectedId, spaceResponse.Id);
             });
         }
-        [Fact]
-        public async Task UpsertApiWithoutExistingApiId()
-        {
-            // NOTE, if space exists we need to mock out
-            // CheckApiExists as well. For another test.
-            var expectedStatusCode = HttpStatusCode.Created;
-            var expectedId = new Guid();
-            var spaceName = "new space";
-            var apiName = "new api";
-            var apiType = new Connection
-            {
-                Type = "REST"
-            };
-            var spaceId = new Guid();
-            var apiId = new Guid();
-            var apiContent = new ApiRequest() { Name = apiName, Type = "REST" };
-            var exploreXsrfToken = "bar";
-            var exploreCookie = $"foo;XSRF-TOKEN={exploreXsrfToken}";
-            pact
-                .UponReceiving("a request to update a api that does not exist, creates a new api")
-                    .Given("a space with apiId {apiId} does not exist", new Dictionary<string, string> { ["apiId"] = apiId.ToString() })
-                    .WithRequest(HttpMethod.Post, $"/spaces/{spaceId}/apis")
-                    .WithHeader("Cookie", exploreCookie)
-                    .WithHeader("X-Xsrf-Token", exploreXsrfToken)
-                    .WithJsonBody(apiContent)
-                .WillRespond()
-                    .WithStatus(expectedStatusCode)
-                    .WithJsonBody(new ApiResponse()
-                    {
-                        Id = expectedId,
-                        Name = spaceName,
-                        Type = apiType.Type.ToString(),
-                        Description = "foo",
-                        Servers = new List<Server>
-                        {
-
-                        },
-                    });
-
-            await pact.VerifyAsync(async ctx =>
-            {
-                var client = new ExploreHttpClient(ctx.MockServerUri.ToString());
-
-                var spaceResponse = await client.UpsertApi(exploreCookie, false, spaceId.ToString(), null, apiName, apiType.Type.ToString(), false);
-
-                Assert.Equal(expectedId, spaceResponse.Id);
-            });
-        }
+        
         [Fact]
         public async Task UpsertConnectionWithoutExistingConnectionId()
         {

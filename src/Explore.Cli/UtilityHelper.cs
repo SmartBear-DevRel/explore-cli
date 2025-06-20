@@ -76,7 +76,7 @@ public static class UtilityHelper
             "explore" => @"{
                 ""$schema"": ""https://json-schema.org/draft/2019-09/schema"",
                 ""type"": ""object"",
-                ""description"": ""an object storing SwaggerHub Explore spaces which have been exported (or crafted to import via the Explore.cli)."",
+                ""description"": ""an object storing API Hub Explore spaces which have been exported (or crafted to import via the Explore.cli)."",
                 ""properties"": {
                     ""info"": {
                         ""type"": ""object"",
@@ -85,7 +85,7 @@ public static class UtilityHelper
                                 ""type"": ""string"",
                                 ""description"": ""the version of the explore spaces export/import capability"",
                                 ""pattern"": ""^([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+)?$"",
-                                ""example"": ""0.0.1""
+                                ""example"": ""1.0.0""
                             },
                             ""exportedAt"": {
                                 ""type"": ""string"",
@@ -98,11 +98,11 @@ public static class UtilityHelper
                     },
                     ""exploreSpaces"": {
                         ""type"": ""array"",
-                        ""description"": ""an array of exported SwaggerHub Explore spaces, apis, and connections"",
+                        ""description"": ""an array of exported API Hub Explore spaces, apis, and connections"",
                         ""items"": [
                             {
                                 ""type"": ""object"",
-                                ""description"": ""a SwaggerHub Explore space"",
+                                ""description"": ""a API Hub Explore space"",
                                 ""properties"": {
                                     ""id"": {
                                         ""type"": ""string"",
@@ -131,14 +131,14 @@ public static class UtilityHelper
                                                         ""type"": ""string"",
                                                         ""description"": ""the name of the api""
                                                     },
-                                                    ""type"": {
+                                                    ""protocol"": {
                                                         ""type"": ""string"",
                                                         ""description"": ""the type of API"",
                                                         ""enum"": [""REST"", ""KAFKA"", ""OTHER""]                                            
                                                     },
-                                                    ""connections"": {
+                                                    ""endpoints"": {
                                                         ""type"": ""array"",
-                                                        ""description"": ""an array of connections to an API"",
+                                                        ""description"": ""an array of endpoints to an API"",
                                                         ""items"": [
                                                             {
                                                                 ""type"": ""object""
@@ -148,7 +148,7 @@ public static class UtilityHelper
                                                 },
                                                 ""required"": [
                                                     ""name"",
-                                                    ""type""
+                                                    ""protocol""
                                                 ]
                                             }
                                         ]

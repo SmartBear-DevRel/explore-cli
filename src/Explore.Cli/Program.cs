@@ -1,9 +1,5 @@
 using System.CommandLine;
-using System.Net;
-using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
-using System.Linq;
 using Spectre.Console;
 using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Postman;
@@ -17,10 +13,10 @@ internal class Program
         var rootCommand = new RootCommand
         {
             Name = "Explore.CLI",
-            Description = "Simple utility CLI for importing data into and out of SwaggerHub Explore"
+            Description = "Simple utility CLI for importing data into and out of API Hub Explore"
         };
 
-        var exploreCookie = new Option<string>(name: "--explore-cookie", description: "A valid and active SwaggerHub Explore session cookie") { IsRequired = true };
+        var exploreCookie = new Option<string>(name: "--explore-cookie", description: "A valid and active API Hub Explore session cookie") { IsRequired = true };
         exploreCookie.AddAlias("-ec");
 
         var importFilePath = new Option<string>(name: "--file-path", description: "The path to the file used for importing data") { IsRequired = true };
@@ -39,28 +35,28 @@ internal class Program
         verbose.AddAlias("-v");
 
         var exportSpacesCommand = new Command("export-spaces") { exploreCookie, exportFilePath, exportFileName, names, verbose };
-        exportSpacesCommand.Description = "Export SwaggerHub Explore spaces to filesystem";
+        exportSpacesCommand.Description = "Export API Hub Explore spaces to filesystem";
         rootCommand.Add(exportSpacesCommand);
 
         exportSpacesCommand.SetHandler(async (ec, fp, en, n, v) =>
         { await ExportSpaces(ec, fp, en, n, v); }, exploreCookie, exportFilePath, exportFileName, names, verbose);
 
         var importSpacesCommand = new Command("import-spaces") { exploreCookie, importFilePath, names, verbose };
-        importSpacesCommand.Description = "Import SwaggerHub Explore spaces from a file";
+        importSpacesCommand.Description = "Import API Hub Explore spaces from a file";
         rootCommand.Add(importSpacesCommand);
 
         importSpacesCommand.SetHandler(async (ec, fp, v, n) =>
         { await ImportSpaces(ec, fp, v, n); }, exploreCookie, importFilePath, names, verbose);
 
         var importPostmanCollectionCommand = new Command("import-postman-collection") { exploreCookie, importFilePath, verbose };
-        importPostmanCollectionCommand.Description = "Import Postman collection (v2.1) into SwaggerHub Explore";
+        importPostmanCollectionCommand.Description = "Import Postman collection (v2.1) into API Hub Explore";
         rootCommand.Add(importPostmanCollectionCommand);
 
         importPostmanCollectionCommand.SetHandler(async (ec, fp, v) =>
         { await ImportPostmanCollection(ec, fp, v); }, exploreCookie, importFilePath, verbose);
 
         var importInsomniaCollectionCommand = new Command("import-insomnia-collection") { exploreCookie, importFilePath, verbose };
-        importInsomniaCollectionCommand.Description = "Import Insomnia collection (v4) into SwaggerHub Explore";
+        importInsomniaCollectionCommand.Description = "Import Insomnia collection (v4) into API Hub Explore";
         rootCommand.Add(importInsomniaCollectionCommand);
 
         importInsomniaCollectionCommand.SetHandler(async (ec, fp, v) =>
@@ -70,7 +66,7 @@ internal class Program
         baseUri.AddAlias("-b");
         var ignorePactFileSchemaValidationResult = new Option<bool>(name: "--ignore-pact-schema-verification-result", description: "Ignore pact schema verification result, performed prior to upload") { IsRequired = false };
         var importPactFileCommand = new Command("import-pact-file") { exploreCookie, importFilePath, baseUri, verbose, ignorePactFileSchemaValidationResult };
-        importPactFileCommand.Description = "Import a Pact file (v2/v3/v4) into SwaggerHub Explore (HTTP interactions only)";
+        importPactFileCommand.Description = "Import a Pact file (v2/v3/v4) into API Hub Explore (HTTP interactions only)";
         rootCommand.Add(importPactFileCommand);
 
         importPactFileCommand.SetHandler(async (ec, fp, b, v, ignorePactFileSchemaValidationResult) =>
@@ -169,15 +165,15 @@ internal class Program
 
                     foreach (var item in apisToImport)
                     {
-                        if (item.APIName == null || item.Connections == null)
+                        if (item.APIName == null || item.Endpoints == null)
                         {
                             apiImportResults.AddRow("[orange3]skipped[/]", $"API '{item.APIName ?? "Unknown"}' skipped", $"No supported request found in collection");
                             continue;
                         }
 
-                        AnsiConsole.MarkupLine($"Processing API: {item.APIName} with {item.Connections.Count} connections");
+                        AnsiConsole.MarkupLine($"Processing API: {item.APIName} with {item.Endpoints.Count} connections");
 
-                        if(item.Connections == null || item.Connections.Count == 0)
+                        if(item.Endpoints == null || item.Endpoints.Count == 0)
                         {
                             apiImportResults.AddRow("[orange3]skipped[/]", $"API '{item.APIName}' skipped", $"No supported request found in collection");
                             continue;
@@ -185,19 +181,24 @@ internal class Program
 
                         //now let's create an API entry in the space
                         var cleanedAPIName = UtilityHelper.CleanString(item.APIName);
-                        //var description = item.Connections.FirstOrDefault(c => c.Description != null)?.Description?.Content;
 
-                        var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "postman", null);
+                        // map the StagedAPI to an Explore API entry
+                        var apiRequest = MappingHelper.MapStagedApiToApiRequestV2(item);
+                        //Console.WriteLine($"API Request Body for {cleanedAPIName}: {JsonSerializer.Serialize(apiRequest)}");
+
+                        var createApiEntryResult = await exploreHttpClient.CreateApiEntryV2(exploreCookie, createSpacesResult.Id, apiRequest, "postman", null);
                        
                         if(createApiEntryResult.Result)
                         {
-                            foreach(var connection in item.Connections)
+                            foreach(var endpoint in item.Endpoints)
                             {
-                                var connectionRequestBody = JsonSerializer.Serialize(connection);
+                                var endpointRequestBody = JsonSerializer.Serialize(endpoint);
+                                //Console.WriteLine($"Endpoint Request Body for {cleanedAPIName}: {endpointRequestBody}");
+
                                 //now let's do the work and import the connection
-                                var createConnectionResponse = await exploreHttpClient.CreateApiConnection(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, connectionRequestBody);
+                                var createEndpointResponse = await exploreHttpClient.CreateApiEndpoint(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, endpointRequestBody);
     
-                                if (createConnectionResponse.Result)
+                                if (createEndpointResponse.Result)
                                 {
                                     apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
                                 }
@@ -228,7 +229,7 @@ internal class Program
                     {
                         case "AUTH_REQUIRED":
                             // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
-                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to API Hub Explore. Please review provided cookie.[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
@@ -262,8 +263,6 @@ internal class Program
 
             Console.WriteLine();
             AnsiConsole.MarkupLine($"[green]Import completed[/]");
-
-            //ToDo - deal with scenario of item-groups
         }
         catch (FileNotFoundException ex)
         {
@@ -398,6 +397,13 @@ internal class Program
                 resultTable.AddColumn(new TableColumn("Details").Centered());
 
                 var spaceName = UtilityHelper.CleanString($"{pactContract?.Consumer.Name}-{pactContract?.Provider.Name}");
+
+                if (spaceName.Length > 60)
+                {
+                    spaceName = spaceName.Substring(0, 60);
+                    Console.WriteLine($"Space name is too long. Truncating to 60 characters: {spaceName}");
+                }
+
                 var createSpacesResult = await exploreHttpClient.CreateSpace(exploreCookie, spaceName);
                 if (createSpacesResult.Result)
                 {
@@ -427,15 +433,19 @@ internal class Program
                             }
                             //now let's create an API entry in the space
                             var cleanedAPIName = UtilityHelper.CleanString(interaction.Description.ToString());
-                            var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "pact file", $"Pact Specification: {pactSpecVersion}");
+                            var apiRequest = PactMappingHelper.MapPactInteractionToApiRequestV2(interaction, pactBaseUri);
+                            //Console.WriteLine($"API Request Body for {cleanedAPIName}: {JsonSerializer.Serialize(apiRequest)}");
+                            
+                            var createApiEntryResult = await exploreHttpClient.CreateApiEntryV2(exploreCookie, createSpacesResult.Id, apiRequest, "pact file", $"Pact Specification: {pactSpecVersion}");
                             if (createApiEntryResult.Result)
                             {
-                                var connectionRequestBody = JsonSerializer.Serialize(PactMappingHelper.MapPactInteractionToExploreConnection(interaction, pactBaseUri));
+                                var endpointRequestBody = JsonSerializer.Serialize(PactMappingHelper.MapPactInteractionToExploreEndpoint(interaction, pactBaseUri));
+                                //Console.WriteLine($"Endpoint Request Body for {cleanedAPIName}: {endpointRequestBody}");
 
                                 // //now let's do the work and import the connection
-                                var createConnectionResponse = await exploreHttpClient.CreateApiConnection(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, connectionRequestBody);
+                                var createEndpointResponse = await exploreHttpClient.CreateApiEndpoint(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, endpointRequestBody);
 
-                                if (createConnectionResponse.Result)
+                                if (createEndpointResponse.Result)
                                 {
                                     apiImportResults.AddRow("[green]OK[/]", $"API '{cleanedAPIName}' created", "Connection created");
                                 }
@@ -465,7 +475,7 @@ internal class Program
                     {
                         case "AUTH_REQUIRED":
                             // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
-                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to API Hub Explore. Please review provided cookie.[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
@@ -607,14 +617,17 @@ internal class Program
 
                         //now let's create an API entry in the space
                         var cleanedAPIName = UtilityHelper.CleanString(resource.Name);
-                        var createApiEntryResult = await exploreHttpClient.CreateApiEntry(exploreCookie, createSpacesResult.Id, cleanedAPIName, "Insomnia", null);
+                        var apiRequest = InsomniaCollectionMappingHelper.MapInsomniaResourceToApiRequestV2(resource);
+                        //Console.WriteLine($"API Request Body for {cleanedAPIName}: {JsonSerializer.Serialize(apiRequest)}");
+                        
+                        var createApiEntryResult = await exploreHttpClient.CreateApiEntryV2(exploreCookie, createSpacesResult.Id, apiRequest, "Insomnia", null);
                         if (createApiEntryResult.Result)
                         {
-                            var connectionRequestBody = JsonSerializer.Serialize(InsomniaCollectionMappingHelper.MapInsomniaRequestResourceToExploreConnection(resource, environmentResources));
-                            //Console.WriteLine($"Connection Request Body for {resource.Name}: {connectionRequestBody}");
+                            var endpointRequestBody = JsonSerializer.Serialize(InsomniaCollectionMappingHelper.MapInsomniaRequestResourceToExploreEndpoint(resource, environmentResources));
+                            //Console.WriteLine($"Endpoint Request Body for {cleanedAPIName}: {endpointRequestBody}");
 
                             //now let's do the work and import the connection
-                            var createConnectionResponse = await exploreHttpClient.CreateApiConnection(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, connectionRequestBody);
+                            var createConnectionResponse = await exploreHttpClient.CreateApiEndpoint(exploreCookie, createSpacesResult.Id, createApiEntryResult.Id, endpointRequestBody);
 
                             if (createConnectionResponse.Result)
                             {
@@ -646,7 +659,7 @@ internal class Program
                     {
                         case "AUTH_REQUIRED":
                             // not expecting a 200 OK here - this would be returned for a failed auth and a redirect to SB ID
-                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to SwaggerHub Explore. Please review provided cookie.[/]"));
+                            resultTable.AddRow(new Markup("[red]failure[/]"), new Markup($"[red] Auth failed connecting to API Hub Explore. Please review provided cookie.[/]"));
                             AnsiConsole.Write(resultTable);
                             Console.WriteLine("");
                             break;
@@ -713,7 +726,7 @@ internal class Program
             }
             var panel = new Panel($"You have [green]{spaces!.Embedded!.Spaces!.Count} spaces[/] in explore");
             panel.Width = 100;
-            panel.Header = new PanelHeader("SwaggerHub Explore Data").Centered();
+            panel.Header = new PanelHeader("API Hub Explore Data").Centered();
 
             // validate the file name if provided
             if (string.IsNullOrEmpty(exportFileName))
@@ -745,7 +758,7 @@ internal class Program
             Console.WriteLine(namesList?.Count > 0 ? $"Exporting spaces: {string.Join(", ", namesList)}" : "Exporting all spaces");
             Console.WriteLine("processing...");
 
-            var spacesToExport = new List<ExploreSpace>();
+            var spacesToExport = new List<ExploreSpaceV2>();
 
             foreach (var space in spaces.Embedded.Spaces)
             {
@@ -760,9 +773,8 @@ internal class Program
                 resultTable.AddColumn(new TableColumn("Details").Centered());
 
 
-                var spaceToExport = new ExploreSpace() { Name = space.Name, Id = space.Id };
+                var spaceToExport = new ExploreSpaceV2() { Name = space.Name, Id = space.Id };
 
-                // get the APIs
                 //get space APIs
                 var apisResponse = await exploreHttpClient.GetSpaceApis(exploreCookie, space.Id);
 
@@ -773,30 +785,41 @@ internal class Program
                     apiImportResults.AddColumn("APIs Processed");
                     apiImportResults.AddColumn("Connections Processed");
 
-                    var spaceAPIs = new List<ExploreApi>();
+                    var spaceAPIs = new List<ExploreApiV2>();
                     var apis = apisResponse.Apis;
 
                     if (apis?.Embedded != null)
                     {
                         foreach (var api in apis!.Embedded!.Apis!)
                         {
-                            if (string.Equals(api.Type, "REST", StringComparison.InvariantCultureIgnoreCase))
+                            if (string.Equals(api.Protocol, "REST", StringComparison.InvariantCultureIgnoreCase))
                             {
-                                var apiToExport = new ExploreApi() { Id = api.Id, Name = api.Name, Type = api.Type };
+                                var apiToExport = new ExploreApiV2() { Id = api.Id, Name = api.Name, Type = api.Type, Description = api.Description, Protocol = api.Protocol };
 
                                 // get the API connections
-                                var connectionsResponse = await exploreHttpClient.GetApiConnectionsForSpace(exploreCookie, space.Id, api.Id);
+                                var endpointsResponse = await exploreHttpClient.GetApiEndpointsForSpace(exploreCookie, space.Id, api.Id);
 
-                                if (connectionsResponse.Result)
+                                if (endpointsResponse.Result && endpointsResponse.Endpoints != null && endpointsResponse.Endpoints.Embedded != null)
                                 {
-                                    var connections = connectionsResponse.Connections;
-                                    apiToExport.connections = new List<Connection>();
 
-                                    foreach (var connection in connections!.Embedded!.Connections!)
+                                    var endpoints = endpointsResponse.Endpoints;
+                                    apiToExport.Endpoints = new List<Endpoint>();
+
+                                    foreach (var endpoint in endpoints!.Embedded!.Endpoints!)
                                     {
-                                        apiToExport.connections.Add(connection);
+                                        //now we need to get the raw endpoint details....
+                                        var endpointDetailsResponse = await exploreHttpClient.GetApiEndpointsDetails(exploreCookie, space.Id, api.Id, endpoint.Id);
 
-                                        apiImportResults.AddRow("[green]OK[/]", $"API '{api.Name}' processed", $"Connection {connection.Name} processed");
+                                        if (endpointDetailsResponse.Result && endpointDetailsResponse.Endpoint != null)
+                                        {
+                                            apiToExport.Endpoints.Add(endpointDetailsResponse.Endpoint!);
+                                            apiImportResults.AddRow("[green]OK[/]", $"API '{api.Name}' processed", $"Connection processed");
+                                        }
+                                        else
+                                        {
+                                            apiImportResults.AddRow("[orange]NOK[/]", $"API '{api.Name}' processed", $"Connection could not be processed");
+                                        }
+
                                     }
                                 }
 
@@ -809,7 +832,7 @@ internal class Program
 
                         }
 
-                        spaceToExport.apis = spaceAPIs;
+                        spaceToExport.Apis = spaceAPIs;
                         spacesToExport.Add(spaceToExport);
                     }
                     else
@@ -833,7 +856,7 @@ internal class Program
             }
 
             // construct the export object
-            var export = new ExportSpaces()
+            var export = new ExportSpacesV2()
             {
                 Info = new Info() { ExportedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
                 ExploreSpaces = spacesToExport
@@ -907,7 +930,7 @@ internal class Program
         try
         {
             string json = File.ReadAllText(filePath);
-            var exportedSpaces = JsonSerializer.Deserialize<ExportSpaces>(json);
+            var exportedSpaces = JsonSerializer.Deserialize<ExportSpacesV2>(json);
 
             //validate json against known (high level) schema
             var validationResult = await UtilityHelper.ValidateSchema(json, "explore");
@@ -921,7 +944,7 @@ internal class Program
             var panel = new Panel($"You have [green]{exportedSpaces!.ExploreSpaces!.Count} spaces[/] to import")
             {
                 Width = 100,
-                Header = new PanelHeader("SwaggerHub Explore Data").Centered()
+                Header = new PanelHeader("API Hub Explore Data").Centered()
             };
             AnsiConsole.Write(panel);
             Console.WriteLine("");
@@ -954,28 +977,28 @@ internal class Program
                         apiImportResults.AddColumn("Connection Imported");
 
                         //iterate over APIs
-                        if (exportedSpace.apis != null)
+                        if (exportedSpace.Apis != null)
                         {
-                            foreach (var exportedAPI in exportedSpace.apis) //add type filter for now
+                            foreach (var exportedAPI in exportedSpace.Apis) //add type filter for now
                             {
-                                if (string.Equals(exportedAPI.Type, "REST", StringComparison.OrdinalIgnoreCase))
+                                if (string.Equals(exportedAPI.Protocol, "REST", StringComparison.OrdinalIgnoreCase))
                                 {
                                     //remark - Improve DTO mapping here
-                                    var importedApi = await exploreHttpClient.UpsertApi(exploreCookie, spaceExists, importedSpace.Id.ToString(), exportedAPI.Id.ToString(), exportedAPI.Name, exportedAPI.Type, verboseOutput);
+                                    var importedApi = await exploreHttpClient.UpsertApi(exploreCookie, spaceExists, importedSpace.Id.ToString(), exportedAPI.Id.ToString(), exportedAPI.Name, exportedAPI.Protocol, exportedAPI.ServerUrls?.Custom?.FirstOrDefault(), verboseOutput);
 
                                     if (!string.IsNullOrEmpty(importedApi.Name))
                                     {
                                         apiImportResults.AddRow("[green]OK[/]", $"API '{importedApi.Name}' imported", "");
                                         //iterate over Connections
-                                        if (exportedAPI.connections != null)
+                                        if (exportedAPI.Endpoints != null)
                                         {
-                                            foreach (var exportedConnection in exportedAPI.connections) //add type filter for now
+                                            foreach (var exportedEndpoint in exportedAPI.Endpoints) //add type filter for now
                                             {
-                                                var importedConnection = await exploreHttpClient.UpsertConnection(exploreCookie, spaceExists, importedSpace.Id.ToString(), importedApi.Id.ToString(), exportedConnection?.Id?.ToString(), exportedConnection, verboseOutput);
+                                                var importedEndpoint = await exploreHttpClient.UpsertEndpoint(exploreCookie, spaceExists, importedSpace.Id.ToString(), importedApi.Id.ToString(), exportedEndpoint?.Id?.ToString(), exportedEndpoint, verboseOutput);
 
-                                                if (importedConnection)
+                                                if (importedEndpoint)
                                                 {
-                                                    apiImportResults.AddRow("[green]OK[/]", "", $"Connection '{exportedConnection?.Name}' imported");
+                                                    apiImportResults.AddRow("[green]OK[/]", "", $"Endpoint imported");
                                                 }
                                             }
                                         }

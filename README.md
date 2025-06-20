@@ -1,6 +1,6 @@
 # explore-cli
 
-Simple utility CLI for importing data into SwaggerHub Explore.
+Simple utility CLI for importing data into API Hub Explore.
 
 ![Can I Deploy](https://smartbear.pactflow.io/pacticipants/explore-cli/branches/main/latest-version/can-i-deploy/to-environment/production/badge)
 
@@ -13,7 +13,7 @@ Simple utility CLI for importing data into SwaggerHub Explore.
                 |_|
 ```
 **Description:**
->   Simple utility CLI for importing data into and out of SwaggerHub Explore
+>   Simple utility CLI for importing data into and out of API Hub Explore
 
 **Usage:**
 > Explore.CLI [command] [options]
@@ -24,20 +24,22 @@ Simple utility CLI for importing data into SwaggerHub Explore.
 >  `-?`, `-h`, `--help`  Show help and usage information
 
 **Commands:**
->  `export-spaces`                 Export SwaggerHub Explore spaces to filesystem
+>  `export-spaces`                 Export API Hub Explore spaces to filesystem
 >
->  `import-spaces`                 Import SwaggerHub Explore spaces from a file
+>  `import-spaces`                 Import API Hub Explore spaces from a file
 >
->  `import-postman-collection`     Import Postman Collection (v2.1) from a file into SwaggerHub Explore
+>  `import-postman-collection`     Import Postman Collection (v2.1) from a file into API Hub Explore
 >
->  `import-insomnia-collection`     Import Insomnia Collection (v4) from a file into SwaggerHub Explore
+>  `import-insomnia-collection`     Import Insomnia Collection (v4) from a file into API Hub Explore
 >
->  `import-pact-file`               Import a Pact file (v2/v3/v4) into SwaggerHub Explore (HTTP interactions only)  
+>  `import-pact-file`               Import a Pact file (v2/v3/v4) into API Hub Explore (HTTP interactions only)  
 
 ### Prerequisites
+
 You will need the following:
+
 - .NET 7.0 (or above). Follow instructions for [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net70), [Linux](https://learn.microsoft.com/en-us/dotnet/core/install/linux), or [MacOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
-- A SwaggerHub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required).
+- A API Hub Explore account, register at https://try.smartbear.com/swaggerhub-explore (if required).
 
 ### Install the CLI
 
@@ -128,18 +130,20 @@ docker run --platform=linux/amd64 \
 
 ### Session Cookies for CLI command
 
-You will need to obtain certain cookies from an active session in SwaggerHub Explore to invoke the `CLI` commands.
+You will need to obtain certain cookies from an active session in API Hub Explore to invoke the `CLI` commands.
 
-From SwaggerHub Explore, navigate to your browser development tools, locate the application cookies and extract the `SESSION` and `XSRF-TOKEN` cookies.
+From API Hub Explore, navigate to your browser development tools, locate the application cookies and extract the `SESSION` and `XSRF-TOKEN` cookies.
 
 #### How to get cookie values from your browser
 
 ##### Keyboard
+
 - Windows/Linux: Ctrl + Shift + I or F12
 - macOS: ⌘ + ⌥ + I
 
 ##### Other Options
-**Chrome** 
+
+**Chrome**
 > Use one of the following methods:
 > - click the three-dots icon in the upper-right-hand corner of the browser window `>`  click More tools `>` Developer Tools
 > - F12 (on Windows/Linux), and Option + ⌘ + J (on macOS)
@@ -169,13 +173,13 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
                 |_|
 ```
 **Description:**
-  > Export SwaggerHub Explore spaces to filesystem
+  > Export API Hub Explore spaces to filesystem
 
 **Usage:**
   > Explore.CLI export-spaces [options]
 
 **Options:**
-  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active API Hub Explore session cookie
 
   > `-fp`, `--file-path` <file-path>                       The path to the directory used for exporting data. It can be either relative or absolute
 
@@ -187,7 +191,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
   > `-?`, `-h`, `--help`                                     Show help and usage information
 
-**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+**Note** - the format for API Hub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
@@ -196,6 +200,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 ### Running the `import-spaces` command
 
 **Command Options**
+
 ```
   _____                  _                              ____   _   _
  | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
@@ -204,14 +209,15 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
  |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
                 |_|
 ```
+
 **Description:**
-  > Import SwaggerHub Explore spaces from a file
+  > Import API Hub Explore spaces from a file
 
 **Usage:**
   > Explore.CLI import-spaces [options]
 
 **Options:**
-  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active API Hub Explore session cookie
 
   > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the file used for importing data
 
@@ -221,7 +227,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
   > `-?`, `-h`, `--help`                                     Show help and usage information
 
-**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+**Note** - the format for API Hub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
@@ -230,6 +236,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 ### Running the `import-postman-collection` command
 
 **Command Options**
+
 ```
   _____                  _                              ____   _   _
  | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
@@ -238,6 +245,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
  |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
                 |_|
 ```
+
 **Description:**
   > Import Postman collections (v2.1) from a file
 
@@ -245,7 +253,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
   > Explore.CLI import-postman-collection [options]
 
 **Options:**
-  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active API Hub Explore session cookie
 
   > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the Postman collection
 
@@ -253,11 +261,12 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
   > `-?`, `-h`, `--help`                                     Show help and usage information
 
-**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+**Note** - the format for API Hub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
 > **Notes:**
+
 > - Compatible with Postman Collections v2.1
 > - Root level request get bundled into API folder with same name as collection
 > - Nested collections get added to an API folder with naming format (`parent folder - nested folder`)
@@ -267,6 +276,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 ### Running the `import-insomnia-collection` command
 
 **Command Options**
+
 ```
   _____                  _                              ____   _   _
  | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
@@ -275,6 +285,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
  |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
                 |_|
 ```
+
 **Description:**
   > Import Insomnia collections (v4) from a file
 
@@ -282,7 +293,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
   > Explore.CLI import-insomnia-collection [options]
 
 **Options:**
-  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active API Hub Explore session cookie
 
   > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the Insomnia collection
 
@@ -290,11 +301,12 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
   > `-?`, `-h`, `--help`                                   Show help and usage information
 
-**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+**Note** - the format for API Hub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
 > **Notes:**
+
 > - Compatible with Insomnia Collection Exports v4
 > - GraphQL collections/requests not supported
 > - gRPC collections/requests are not supported
@@ -304,6 +316,7 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 ### Running the `import-pact-file` command
 
 **Command Options**
+
 ```
   _____                  _                              ____   _   _
  | ____| __  __  _ __   | |   ___    _ __    ___       / ___| | | (_)
@@ -312,14 +325,15 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
  |_____| /_/\_\ | .__/  |_|  \___/  |_|     \___| (_)  \____| |_| |_|
                 |_|
 ```
+
 **Description:**
-  > Import a Pact file (v2/v3/v4) into SwaggerHub Explore (HTTP interactions only)
+  > Import a Pact file (v2/v3/v4) into API Hub Explore (HTTP interactions only)
 
 **Usage:**
   > Explore.CLI import-pact-file [options]
 
 **Options:**
-  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active SwaggerHub Explore session cookie
+  > `-ec`, `--explore-cookie` <explore-cookie> (REQUIRED)  A valid and active API Hub Explore session cookie
 
   > `-fp`, `--file-path` <file-path> (REQUIRED)            The path to the Insomnia collection
 
@@ -329,11 +343,12 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 
   > `-?`, `-h`, `--help`                                   Show help and usage information
 
-**Note** - the format for SwaggerHub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
+**Note** - the format for API Hub Explore cookies is as follows: `"cookie-name=cookie-value; cookie-name=cookie-value"`
 
 >Example: `"SESSION=5a0a2e2f-97c6-4405-b72a-299fa8ce07c8; XSRF-TOKEN=3310cb20-2ec1-4655-b1e3-4ab76a2ac2c8"`
 
 > **Notes:**
+
 > - Compatible with valid Pact v2 / v3 / v4 specification files
 > - Users are advised to provide the base url when importing pact files with `--base-uri` / `-b`, to the required server you wish to explore.
 > Pact files do not contain this information
@@ -341,30 +356,32 @@ From SwaggerHub Explore, navigate to your browser development tools, locate the 
 >   - V3 message based pacts are unsupported
 >   - V4 interactions other than synchronous/http will be ignored
 
-## More Information on SwaggerHub Explore
-      
-- For SwaggerHub Explore info, see - https://swagger.io/tools/swaggerhub-explore/
-- For SwaggerHub Explore docs, see - https://support.smartbear.com/swaggerhub-explore/docs
-- Try SwaggerHub Explore - https://try.smartbear.com/swaggerhub-explore
+## More Information on API Hub Explore
 
+- For API Hub Explore info, see - https://swagger.io/api-hub/explore/
+- For API Hub Explore docs, see - https://support.smartbear.com/api-hub/explore/docs/?lang=en
+- Try API Hub Explore - https://try.smartbear.com/swaggerhub-explore
 
 ## Development
 
-### Prerequisites 
+### Prerequisites
 
 You will need the following:
+
 - .NET 7.0 (or above). Follow instructions for [Windows](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net70), [Linux](https://learn.microsoft.com/en-us/dotnet/core/install/linux), or [MacOS](https://learn.microsoft.com/en-us/dotnet/core/install/macos).
 
 ### Setting up
 
 Run the following commands to setup the repository for local development:
 
-```
+```text
+
 $ git clone https://github.com/SmartBear-DevRel/explore-cli.git
 $ cd explore-cli/src/explore.cli
 $ dotnet add package System.CommandLine --prerelease
 $ dotnet add package Microsoft.AspNetCore.StaticFiles
 $ dotnet add package NJsonSchema
+
 ```
 
 ### Build

@@ -36,7 +36,17 @@ public static class InsomniaCollectionMappingHelper
         }
 
         return false;
-    } 
+    }
+
+    public static ApiRequestV2 MapInsomniaResourceToApiRequestV2(Resource resource)
+    {
+        return new ApiRequestV2()
+        {
+            Name = resource.Name?.Substring(0,60) ?? string.Empty,
+            ServerURLs = new string[] { resource?.Url?.Split("?")[0] ?? string.Empty },
+            Description = $"Imported via Explore.CLI from Insomnia Collection. {resource?.Description ?? string.Empty}",
+        };
+    }
 
     public static Connection MapInsomniaRequestResourceToExploreConnection(Resource resource, List<Resource> environmentResources)
     {
@@ -55,7 +65,7 @@ public static class InsomniaCollectionMappingHelper
                         Url = ParseUrl(resource?.Url, environmentResources)
                     }
                 },
-                Paths = CreatePathsDictionary(resource, environmentResources),                
+                Paths = CreatePathsDictionary(resource, environmentResources),
             },
             Settings = new Settings()
             {
@@ -68,9 +78,47 @@ public static class InsomniaCollectionMappingHelper
         };
     }
 
+    public static Endpoint MapInsomniaRequestResourceToExploreEndpoint(Resource resource, List<Resource> environmentResources)
+    {
+        var baseUrl = resource?.Url?.Split("?")[0];
+        var path = baseUrl?.Substring(UtilityHelper.IndexOfNth(baseUrl, '/', 3));
+
+        return new Endpoint()
+        {
+            Method = resource?.Method?.ToUpperInvariant() ?? string.Empty,
+            Path = path ?? string.Empty,
+            Connection = new Connection()
+            {
+                Type = "ConnectionRequest",
+                Name = "REST",
+                Schema = "OpenAPI",
+                SchemaVersion = "3.0.1",
+                ConnectionDefinition = new ConnectionDefinition()
+                {
+                    Servers = new List<Server>()
+                    {
+                        new Server()
+                        {
+                            Url = ParseUrl(resource?.Url, environmentResources)
+                        }
+                    },
+                    Paths = CreatePathsDictionary(resource, environmentResources),                
+                },
+                Settings = new Settings()
+                {
+                    Type = "RestConnectionSettings",
+                    ConnectTimeout = 30,
+                    FollowRedirects = true,
+                    EncodeUrl = true
+                },
+                Credentials = MapInsomniaAuthenticationToExploreCredentials(resource?.Authentication)
+            }
+        };
+    }
+
     public static string ParseUrl(string? url, List<Resource> environmentResources)
     {
-        if(string.IsNullOrEmpty(url))
+        if (string.IsNullOrEmpty(url))
         {
             return string.Empty;
         }

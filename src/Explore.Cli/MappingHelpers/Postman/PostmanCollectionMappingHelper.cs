@@ -2,11 +2,46 @@ using System.Text.Json;
 using Explore.Cli.Models.Explore;
 using Explore.Cli.Models.Postman;
 using Explore.Cli.Models;
+using Microsoft.VisualBasic;
 
 public static class PostmanCollectionMappingHelper
 {
-   public static Connection MapPostmanCollectionItemToExploreConnection(Item postmanCollectionItem)
-   {
+    public static Endpoint MapPostmanCollectionItemToExploreEndpoint(Item postmanCollectionItem)
+    {
+        return new Endpoint()
+        {
+            Method = postmanCollectionItem.Request?.Method?.ToUpper() ?? "GET",
+            Path = $"/{string.Join("/", postmanCollectionItem.Request?.Url?.Path ?? Enumerable.Empty<string>())}",
+            Connection = new Connection()
+            {
+                Type = "ConnectionRequest",
+                Name = "REST",
+                Schema = "OpenAPI",
+                SchemaVersion = "3.0.1",
+                ConnectionDefinition = new ConnectionDefinition()
+                {
+                    Servers = new List<Server>()
+                    {
+                        new Server()
+                        {
+                            Url = GetServerUrlFromItemRequest(postmanCollectionItem.Request)
+                        }
+                    },
+                    Paths = CreatePathsDictionary(postmanCollectionItem.Request),
+                },
+                Settings = new Settings()
+                {
+                    Type = "RestConnectionSettings",
+                    ConnectTimeout = 30,
+                    FollowRedirects = true,
+                    EncodeUrl = true
+                },
+            }
+        };
+    }
+
+    public static Connection MapPostmanCollectionItemToExploreConnection(Item postmanCollectionItem)
+    {
         return new Connection()
         {
             Type = "ConnectionRequest",
@@ -32,34 +67,34 @@ public static class PostmanCollectionMappingHelper
                 EncodeUrl = true
             },
         };
-   }
+    }
 
-   public static string GetServerUrlFromItemRequest(Request? request)
-   {
-        if(request == null || request.Url == null || string.IsNullOrEmpty(request.Url.Raw))
+    public static string GetServerUrlFromItemRequest(Request? request)
+    {
+        if (request == null || request.Url == null || string.IsNullOrEmpty(request.Url.Raw))
         {
             return string.Empty;
         }
-        
+
         var host = string.Join(".", request.Url?.Host ?? Enumerable.Empty<string>());
         var serverUrl = $"{request.Url?.Protocol}://{host}";
-        
-        if(!string.IsNullOrEmpty(request.Url?.Port))
+
+        if (!string.IsNullOrEmpty(request.Url?.Port))
         {
             serverUrl += $":{request.Url.Port}";
         }
 
         return serverUrl;
-   }
+    }
 
     public static List<Parameter> MapHeaderAndQueryParams(Request? request)
     {
         List<Parameter> parameters = new List<Parameter>();
 
-        if(request?.Header != null && request.Header.Any())
+        if (request?.Header != null && request.Header.Any())
         {
             // map the headers
-            foreach(var hdr in request.Header)
+            foreach (var hdr in request.Header)
             {
                 parameters.Add(new Parameter()
                 {
@@ -77,7 +112,7 @@ public static class PostmanCollectionMappingHelper
         }
 
         // if we have urlencoded body then force the content type header as plaintext (Explore doesn't support urlencoded natively)
-        if(request?.Body != null && request.Body.Mode != null && request.Body.Mode.Equals("urlencoded", StringComparison.OrdinalIgnoreCase))
+        if (request?.Body != null && request.Body.Mode != null && request.Body.Mode.Equals("urlencoded", StringComparison.OrdinalIgnoreCase))
         {
             parameters.Add(new Parameter()
             {
@@ -98,11 +133,11 @@ public static class PostmanCollectionMappingHelper
         }
 
         // parse and map the query string
-        if(request?.Url != null)
+        if (request?.Url != null)
         {
-            if(request.Url.Query != null)
+            if (request.Url.Query != null)
             {
-                foreach(var param in request.Url.Query)
+                foreach (var param in request.Url.Query)
                 {
                     parameters.Add(new Parameter()
                     {
@@ -121,12 +156,12 @@ public static class PostmanCollectionMappingHelper
         }
 
         return parameters;
-    }   
+    }
 
     public static Dictionary<string, object> CreatePathsDictionary(Request? request)
-    {        
+    {
 
-        if(request?.Url != null && request.Url.Path != null)
+        if (request?.Url != null && request.Url.Path != null)
         {
             var pathsContent = new PathsContent()
             {
@@ -134,9 +169,9 @@ public static class PostmanCollectionMappingHelper
             };
 
             //add request body
-            if(request.Body != null)
+            if (request.Body != null)
             {
-                if(request.Body.Raw != null)
+                if (request.Body.Raw != null)
                 {
                     var examplesJson = new Dictionary<string, object>
                     {
@@ -153,7 +188,7 @@ public static class PostmanCollectionMappingHelper
                         Content = contentJson
                     };
                 }
-                else if(request.Body.Urlencoded != null)
+                else if (request.Body.Urlencoded != null)
                 {
                     var examplesJson = new Dictionary<string, object>
                     {
@@ -173,7 +208,7 @@ public static class PostmanCollectionMappingHelper
             }
 
             // add header and query params
-            if(request.Method != null)
+            if (request.Method != null)
             {
                 var methodJson = new Dictionary<string, object>
                 {
@@ -185,7 +220,7 @@ public static class PostmanCollectionMappingHelper
                     { $"/{string.Join("/", request.Url.Path)}", methodJson }
                 };
 
-                return json;                
+                return json;
             }
         }
 
@@ -200,16 +235,16 @@ public static class PostmanCollectionMappingHelper
             {
                 Value = rawBody
             }
-        };        
+        };
     }
 
     public static Examples MapUrlEncodedBodyToContentExamples(List<Urlencoded>? urlEncodedBody)
     {
         var rawBody = string.Empty;
 
-        if(urlEncodedBody != null)
+        if (urlEncodedBody != null)
         {
-            foreach(var param in urlEncodedBody)
+            foreach (var param in urlEncodedBody)
             {
                 rawBody += $"{param.Key}={param.Value}&";
             }
@@ -221,9 +256,9 @@ public static class PostmanCollectionMappingHelper
             {
                 Value = rawBody
             }
-        };        
+        };
     }
-    
+
     public static List<Item> FlattenItems(List<Item> items)
     {
         var result = new List<Item>();
@@ -231,10 +266,10 @@ public static class PostmanCollectionMappingHelper
         foreach (var item in items)
         {
             // Add the current item to the list if it has request data
-            if(item.Request != null)
+            if (item.Request != null)
             {
                 result.Add(item);
-            }            
+            }
 
             // If the item has nested items, flatten each one and add it to the list
             if (item.ItemList != null)
@@ -248,10 +283,10 @@ public static class PostmanCollectionMappingHelper
 
     public static bool IsItemRequestModeSupported(Request request)
     {
-        if(request.Body != null && request.Body.Mode != null && request.Url != null && request.Url.Protocol != null)
+        if (request.Body != null && request.Body.Mode != null && request.Url != null && request.Url.Protocol != null)
         {
             // if the request body mode is not raw or urlencoded and the protocol is not http or https, return false
-            if(!(request.Body.Mode.Equals("raw", StringComparison.OrdinalIgnoreCase) || request.Body.Mode.Equals("urlencoded", StringComparison.OrdinalIgnoreCase) || request.Body.Mode.Equals("formdata", StringComparison.OrdinalIgnoreCase)) && request.Url.Protocol.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            if (!(request.Body.Mode.Equals("raw", StringComparison.OrdinalIgnoreCase) || request.Body.Mode.Equals("urlencoded", StringComparison.OrdinalIgnoreCase) || request.Body.Mode.Equals("formdata", StringComparison.OrdinalIgnoreCase)) && request.Url.Protocol.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
@@ -268,23 +303,23 @@ public static class PostmanCollectionMappingHelper
     {
         var jsonObject = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
 
-        if(jsonObject != null && jsonObject.ContainsKey("info"))
+        if (jsonObject != null && jsonObject.ContainsKey("info"))
         {
-            
-            var info = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonObject["info"].ToString() ?? string.Empty);
-            
 
-            if(info != null && info.ContainsKey("schema"))
+            var info = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonObject["info"].ToString() ?? string.Empty);
+
+
+            if (info != null && info.ContainsKey("schema"))
             {
-                if(info["schema"] != null && info["schema"].ToString() != null)
+                if (info["schema"] != null && info["schema"].ToString() != null)
                 {
                     var schema = info["schema"].ToString();
-                    if(string.Equals(schema, "https://schema.getpostman.com/json/collection/v2.1.0/collection.json", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(schema, "https://schema.getpostman.com/json/collection/v2.1.0/collection.json", StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
                 }
-                
+
             }
         }
 
@@ -295,7 +330,7 @@ public static class PostmanCollectionMappingHelper
     {
         var connections = new List<Connection>();
 
-        if(collectionItem.Request != null && IsItemRequestModeSupported(collectionItem.Request))
+        if (collectionItem.Request != null && IsItemRequestModeSupported(collectionItem.Request))
         {
             connections.Add(MapPostmanCollectionItemToExploreConnection(collectionItem));
         }
@@ -303,9 +338,9 @@ public static class PostmanCollectionMappingHelper
         // if nested item exists, then add it to the connections list if it has request data
         if (collectionItem.ItemList != null)
         {
-            foreach(var item in collectionItem.ItemList)
+            foreach (var item in collectionItem.ItemList)
             {
-                if(item.Request != null && IsItemRequestModeSupported(item.Request))
+                if (item.Request != null && IsItemRequestModeSupported(item.Request))
                 {
                     connections.Add(MapPostmanCollectionItemToExploreConnection(item));
                 }
@@ -314,6 +349,30 @@ public static class PostmanCollectionMappingHelper
 
         return connections;
     }
+
+    public static List<Endpoint> MapPostmanCollectionItemsToExploreEndpoints(Item collectionItem)
+    {
+        var endpoints = new List<Endpoint>();
+
+        if (collectionItem.Request != null && IsItemRequestModeSupported(collectionItem.Request))
+        {
+            endpoints.Add(MapPostmanCollectionItemToExploreEndpoint(collectionItem));
+        }
+
+        // if nested item exists, then add it to the connections list if it has request data
+        if (collectionItem.ItemList != null)
+        {
+            foreach (var item in collectionItem.ItemList)
+            {
+                if (item.Request != null && IsItemRequestModeSupported(item.Request))
+                {
+                    endpoints.Add(MapPostmanCollectionItemToExploreEndpoint(item));
+                }
+            }
+        }
+
+        return endpoints;
+    }    
 
     public static List<StagedAPI> MapPostmanCollectionToStagedAPI(PostmanCollection postmanCollection, string rootName)
     {
@@ -325,25 +384,27 @@ public static class PostmanCollectionMappingHelper
         });
 
 
-        if(postmanCollection.Item != null)
+        if (postmanCollection.Item != null)
         {
-            foreach(var item in postmanCollection.Item)
+            foreach (var item in postmanCollection.Item)
             {
 
-                if(item.Request != null && IsItemRequestModeSupported(item.Request))
+                if (item.Request != null && IsItemRequestModeSupported(item.Request))
                 {
                     StagedAPI api = new StagedAPI()
                     {
                         APIName = item.Name ?? string.Empty,
                         APIUrl = GetServerUrlFromItemRequest(item.Request),
-                        Connections = MapPostmanCollectionItemsToExploreConnections(item)
+                        Connections = MapPostmanCollectionItemsToExploreConnections(item),
+                        Endpoints = MapPostmanCollectionItemsToExploreEndpoints(item)
                     };
 
                     //if an API with same name already exists, add the connection to the existing API
                     var existingAPI = stagedAPIs.FirstOrDefault(x => x.APIName == rootName);
-                    if(existingAPI != null)
+                    if (existingAPI != null)
                     {
                         existingAPI.Connections.AddRange(api.Connections);
+                        existingAPI.Endpoints.AddRange(api.Endpoints);
                     }
                     else
                     {
@@ -351,7 +412,8 @@ public static class PostmanCollectionMappingHelper
                         {
                             APIUrl = api.APIUrl,
                             APIName = api.APIName,
-                            Connections = api.Connections
+                            Connections = api.Connections,
+                            Endpoints = api.Endpoints
                         });
                     }
                 }
