@@ -42,7 +42,9 @@ public static class InsomniaCollectionMappingHelper
     {
         return new ApiRequestV2()
         {
-            Name = resource.Name?.Substring(0,60) ?? string.Empty,
+            Name = !string.IsNullOrEmpty(resource.Name)
+                ? (resource.Name.Length > 60 ? resource.Name.Substring(0, 60) : resource.Name)
+                : string.Empty,
             ServerURLs = new string[] { resource?.Url?.Split("?")[0] ?? string.Empty },
             Description = $"Imported via Explore.CLI from Insomnia Collection. {resource?.Description ?? string.Empty}",
         };
