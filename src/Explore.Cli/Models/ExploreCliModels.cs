@@ -8,8 +8,10 @@ public partial class SchemaValidationResult {
     public string? Message { get; set; }
 }
 
-public partial class StagedAPI {
+public partial class StagedAPI
+{
     public string APIName { get; set; } = string.Empty;
     public string APIUrl { get; set; } = string.Empty;
     public List<Connection> Connections { get; set; } = new List<Connection>();
+    public List<Endpoint> Endpoints { get; set; } = new List<Endpoint>();
 }
