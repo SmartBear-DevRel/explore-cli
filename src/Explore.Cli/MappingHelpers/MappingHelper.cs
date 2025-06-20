@@ -39,7 +39,6 @@ public static class MappingHelper
     // Helper to map StagedAPI into an ExploreContracts.APIRequestV2
     public static ApiRequestV2 MapStagedApiToApiRequestV2(StagedAPI stagedApi)
     {
-
         return new ApiRequestV2
         {
             Name = !string.IsNullOrEmpty(stagedApi.APIName)
