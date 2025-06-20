@@ -41,7 +41,9 @@ public static class MappingHelper
     {
         return new ApiRequestV2
         {
-            Name = stagedApi.APIName.Substring(0, 60),
+            Name = !string.IsNullOrEmpty(stagedApi.APIName)
+                ? (stagedApi.APIName.Length > 60 ? stagedApi.APIName.Substring(0, 60) : stagedApi.APIName)
+                : string.Empty,
             ServerURLs = new string[] { stagedApi.APIUrl }
         };
     }
