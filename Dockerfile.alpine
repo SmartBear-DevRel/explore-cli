@@ -1,4 +1,5 @@
 FROM alpine
+ARG VERSION=0.9.1
 RUN apk --no-cache add curl gcc icu
 
 RUN if [ "$(uname -m)" = "aarch64" ]; then \
@@ -9,7 +10,7 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then \
         echo unsupported arch "$(uname -m)"; \
         exit 1; \
     fi && \
-    curl -LO https://github.com/smartbear-devrel/explore-cli/releases/download/0.6.0/explore-cli-linux-musl-$BINARY_ARCH.gz && \
+    curl -LO https://github.com/smartbear-devrel/explore-cli/releases/download/${VERSION}/explore-cli-linux-musl-$BINARY_ARCH.gz && \
     gunzip explore-cli-linux-musl-$BINARY_ARCH.gz && \
     chmod +x explore-cli-linux-musl-$BINARY_ARCH && \
     mv explore-cli-linux-musl-$BINARY_ARCH /usr/local/bin/explore-cli && \
